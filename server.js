@@ -8,11 +8,14 @@ const { PythonShell } = require("python-shell");
 var app = express();
 var input = path.join(__dirname, "uploads/input.jpg");
 var output = path.join(__dirname, "output.jpg");
+var fullUrl = '';
 
 app.get("/", function(req, res) {
+  fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
+  console.log(fullUrl);
   res.writeHead(200, { "Content-Type": "text/html" });
   res.write(
-    '<form action="fileupload" method="post" enctype="multipart/form-data">'
+    '<form action="' + fullUrl + 'fileupload" method="post" enctype="multipart/form-data">'
   );
   res.write('<input type="file" name="filetoupload"><br>');
   res.write('<input type="submit">');
@@ -58,7 +61,7 @@ app.post("/fileupload", function(req, res) {
     //res.end();
     //res.end("That's all folks!");
 
-    res.redirect(307, '/readfile');
+    res.redirect(307, fullUrl + 'readfile');
   });
 
   req.pipe(busboy);
