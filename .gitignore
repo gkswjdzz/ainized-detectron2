@@ -3,3 +3,4 @@ uploads
 public
 detectron2
 output.jpg
+.vscode
