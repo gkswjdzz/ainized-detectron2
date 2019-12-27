@@ -23,7 +23,7 @@ COPY package.json .
 RUN npm install
 
 COPY . .
-RUN mv /workspace/pre-trained-model.pkl /workspace/detectron2_repo/pre-trained-model.pkl
+#RUN mv /workspace/pre-trained-model.pkl /workspace/detectron2_repo/pre-trained-model.pkl
 RUN mv /workspace/demo.py /workspace/detectron2_repo/demo.py
 
 RUN wget http://images.cocodataset.org/val2017/000000439715.jpg -O /workspace/uploads/input.jpg
