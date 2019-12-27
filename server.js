@@ -21,7 +21,9 @@ app.get("/", function(req, res) {
 });
 
 app.post("/readfile", async (req, res) => {
-  await runPython(input, output);
+  console.log(input, output);
+  const {i, o} = await runPython(input, output);
+  console.log(i, o);
   console.log("start readfile");
   res.writeHead(200, { "Content-Type": "text/html" });
   res.write("<html><body>");
@@ -70,7 +72,7 @@ app.listen(80, () => {
 runPython = (input, output) => {
   return new Promise((resolve, reject) => {
     PythonShell.run(
-      "./detectron2/demo.py", { args: [input, output] },
+      __dirname + "/detectron2_repo/demo.py", { args: [input, output] },
       async (err, result) => {
         if (err) {
           if (err.traceback === undefined) {
@@ -79,12 +81,12 @@ runPython = (input, output) => {
             console.log(err.traceback);
           }
         }
-        // const basePath = await result[result.length - 3];
-        // const stylePath = await result[result.length - 2];
+        const inputdir = await result[result.length - 2];
+        const outputdir = await result[result.length - 1];
         // const outputPath = await result[result.length - 1];
-        // console.log(basePath, stylePath, outputPath);
+        console.log(inputdir, outputdir);
         // resolve({basePath, stylePath, outputPath});
-        resolve();
+        resolve({inputdir, outputdir});
       }
     );
   });

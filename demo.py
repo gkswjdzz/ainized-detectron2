@@ -5,6 +5,7 @@ torch.__version__
 # Some basic setup
 # Setup detectron2 logger
 import sys
+import os
 import detectron2
 from detectron2.utils.logger import setup_logger
 setup_logger()
@@ -27,6 +28,10 @@ from detectron2.data import MetadataCatalog
 input_dir = sys.argv[1];
 output_dir = sys.argv[2];
 
+
+print(input_dir);
+print(output_dir);
+
 im = cv2.imread(input_dir)
 cfg = get_cfg()
 # add project-specific config (e.g., TensorMask) here if you're not running a model in detectron2's core library
@@ -47,4 +52,6 @@ v = Visualizer(im[:, :, ::-1], MetadataCatalog.get(cfg.DATASETS.TRAIN[0]), scale
 v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
 #cv2.imshow('detectron', v.get_image()[:, :, ::-1])
 
+print(input_dir);
+print(output_dir);
 cv2.imwrite(output_dir, v.get_image()[:, :, ::-1])
