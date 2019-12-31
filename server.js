@@ -50,18 +50,25 @@ app.post("/readfile", async (req, res) => {
 });
 
 app.post("/fileupload", function(req, res) {
+  var fileuploaded = true;
   var busboy = new Busboy({ headers: req.headers });
   busboy.on("file", function(fieldname, file, filename, encoding, mimetype) {
+    if(filename === ""){
+      fileuploaded = false;
+      console.log("here");
+    }
+    console.log(fieldname, filename);
     file.pipe(fs.createWriteStream(input));
   });
 
-  busboy.on('finish', function() {
-    console.log('Upload complete');
-    //res.writeHead(303, { 'Connection': 'close', Location : '/readfile' });
-    //res.end();
-    //res.end("That's all folks!");
-
-    res.redirect(307, fullUrl + 'readfile');
+  busboy.on("finish", function() {
+    console.log("Upload complete");
+    if(!fileuploaded) {
+      res.writeHead(400);
+      res.end();
+      return;
+    }
+    res.redirect(307, fullUrl + "readfile");
   });
 
   req.pipe(busboy);
