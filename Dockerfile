@@ -7,7 +7,8 @@ RUN apt-get update
 RUN apt-get -y install curl gnupg
 RUN curl -sL https://deb.nodesource.com/setup_11.x  | bash -
 RUN apt-get -y install nodejs
-RUN mkdir /workspace 
+RUN mkdir /workspace
+RUN mkdir /workspace/uploads 
 WORKDIR /workspace
 
 RUN rm -rf node_modules && npm install
@@ -19,11 +20,12 @@ RUN pip install 'git+https://github.com/cocodataset/cocoapi.git#subdirectory=Pyt
 RUN git clone https://github.com/facebookresearch/detectron2 detectron2_repo
 RUN pip install --user -e detectron2_repo
 
+RUN  pip install --user -e detectron2_repo/projects/TensorMask
+
 COPY package.json .
 RUN npm install
 
 COPY . .
-#RUN mv /workspace/pre-trained-model.pkl /workspace/detectron2_repo/pre-trained-model.pkl
 RUN mv /workspace/demo.py /workspace/detectron2_repo/demo.py
 
 RUN wget http://images.cocodataset.org/val2017/000000439715.jpg -O /workspace/uploads/input.jpg
