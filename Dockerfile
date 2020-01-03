@@ -13,7 +13,7 @@ WORKDIR /workspace
 
 RUN rm -rf node_modules && npm install
 
-RUN pip3 install torch torchvision opencv-python==3.4.8.29 cython
+RUN pip3 install torch torchvision opencv-python==3.4.8.29 cython Pillow==6.2.2
 RUN pip install -U 'git+https://github.com/facebookresearch/fvcore'
 RUN pip install 'git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI'
 

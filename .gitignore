@@ -4,3 +4,4 @@ public
 detectron2
 output.jpg
 .vscode
+.DS_Store

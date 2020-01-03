@@ -33,6 +33,9 @@ Now the server is available at http://localhost.
 
 Note that the docker image can be deployed using any docker-based deploy platform (e.g. [ainize.ai](https://ainize.ai)).
 
+You can see the demo server from below site
+
+https://endpoint.ainize.ai/gkswjdzz/ainize-run-detectron2/
 
 # How to publish an image file
 
