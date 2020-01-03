@@ -17,7 +17,7 @@ app.get("/", function(req, res) {
     res.write(
     '<form action="/" method="post" enctype="multipart/form-data">'
     );
-    res.write('<input type="file" name="filetoupload"><br>');
+    res.write('<input type="file" accept="image/*" name="filetoupload"><br>');
     res.write('<input type="submit">');
     res.write("</form>");
     return res.end();
