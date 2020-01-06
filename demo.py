@@ -1,57 +1,54 @@
-import torch, torchvision
-torch.__version__
-
-# You may need to restart your runtime prior to this, to let your installation take effect
-# Some basic setup
-# Setup detectron2 logger
-import sys
+import argparse
 import os
-import detectron2
-from detectron2.utils.logger import setup_logger
-setup_logger()
-
-# import some common libraries
-import numpy as np
-import cv2
-import random
-#from google.colab.patches import cv2_imshow
-
-# import some common detectron2 utilities
-from detectron2 import model_zoo
-from detectron2.engine import DefaultPredictor
 from detectron2.config import get_cfg
-from detectron2.utils.visualizer import Visualizer
-from detectron2.data import MetadataCatalog
+from detectron2.data.detection_utils import read_image
+from predictor import VisualizationDemo
+
+def setup_cfg(args):
+    cfg = get_cfg()
+    cfg.merge_from_file(args.config_file)
+    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = args.confidence_threshold
+    cfg.MODEL.PANOPTIC_FPN.COMBINE.INSTANCES_CONFIDENCE_THRESH = args.confidence_threshold
+    cfg.MODEL.DEVICE = 'cpu'
+    cfg.freeze()
+    return cfg
 
 
-#cv2.imshow('im', im)
-input_dir = sys.argv[1];
-output_dir = sys.argv[2];
+def get_parser():
+    parser = argparse.ArgumentParser(description="Detectron2 demo for builtin models")
+    parser.add_argument(
+        "--config-file",
+        default="/workspace/detectron2_repo/configs/quick_schedules/mask_rcnn_R_50_FPN_inference_acc_test.yaml",
+        #default="/workspace/detectron2_repo/configs/Cityscapes/mask_rcnn_R_50_FPN.yaml",
+        #default="/workspace/detectron2_repo/configs/quick_schedules/keypoint_rcnn_R_50_FPN_inference_acc_test.yaml",
+        
+        #proposal required
+        #default="/workspace/detectron2_repo/configs/quick_schedules/fast_rcnn_R_50_FPN_inference_acc_test.yaml",
+        #not work
+        #default="/workspace/detectron2_repo/configs/COCO-PanopticSegmentation/panoptic_fpn_R_101_3x.yaml",
+        metavar="FILE",
+        help="path to config file",
+    )
+    parser.add_argument("--input", nargs="+", help="A list of space separated input images")
+    
+    parser.add_argument(
+        "--confidence-threshold",
+        type=float,
+        default=0.5,
+        help="Minimum score for instance predictions to be shown",
+    )
+    return parser
 
+if __name__ == "__main__":
+    args = get_parser().parse_args()
+    cfg = setup_cfg(args)
 
-print(input_dir);
-print(output_dir);
+    input = args.input[0]
+    
+    demo = VisualizationDemo(cfg)
+    # use PIL, to be consistent with evaluation
+    img = read_image(input, format="BGR")
+    predictions, visualized_output = demo.run_on_image(img)
+    visualized_output.save(os.path.dirname(input) + '/output.jpg')
 
-im = cv2.imread(input_dir)
-cfg = get_cfg()
-# add project-specific config (e.g., TensorMask) here if you're not running a model in detectron2's core library
-cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
-cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # set threshold for this model
-# Find a model from detectron2's model zoo. You can either use the https://dl.fbaipublicfiles.... url, or use the detectron2:// shorthand
-cfg.MODEL.WEIGHTS = "detectron2://COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x/137849600/model_final_f10217.pkl"
-cfg.MODEL.DEVICE = "cpu"
-predictor = DefaultPredictor(cfg)
-outputs = predictor(im)
-
-# look at the outputs. See https://detectron2.readthedocs.io/tutorials/models.html#model-output-format for specification
-outputs["instances"].pred_classes
-outputs["instances"].pred_boxes
-
-# We can use `Visualizer` to draw the predictions on the image.
-v = Visualizer(im[:, :, ::-1], MetadataCatalog.get(cfg.DATASETS.TRAIN[0]), scale=1.2)
-v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
-#cv2.imshow('detectron', v.get_image()[:, :, ::-1])
-
-print(input_dir);
-print(output_dir);
-cv2.imwrite(output_dir, v.get_image()[:, :, ::-1])
+    print(input), print("end")

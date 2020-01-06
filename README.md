@@ -1,5 +1,5 @@
-[![Run on Ainize](https://ainize.ai/static/images/run_on_ainize_button.svg)](https://ainize.web.app/redirect?git_repo=github.com/gkswjdzz/ainize-run-detectron2)
-# Ainize-run-detectron2
+[![Run on Ainize](https://ainize.ai/static/images/run_on_ainize_button.svg)](https://ainize.web.app/redirect?git_repo=github.com/gkswjdzz/ainized-detectron2)
+# ainized-detectron2
 
 This repository provides a server that infers instance segmentation for an image based on a Mast R-CNN R-50-FPN model. The model used in the server is from [Facebookresearch/detectron2](https://github.com/facebookresearch/detectron2), which is an implementation of FAIR(Facebook AI Research) paper "Mask R-CNN". 
 
@@ -35,7 +35,7 @@ Note that the docker image can be deployed using any docker-based deploy platfor
 
 You can see the demo server from below site
 
-https://endpoint.ainize.ai/gkswjdzz/ainize-run-detectron2/
+https://endpoint.ainize.ai/gkswjdzz/ainized-detectron2/
 
 # How to publish an image file
 

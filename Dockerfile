@@ -13,7 +13,7 @@ WORKDIR /workspace
 
 RUN rm -rf node_modules && npm install
 
-RUN pip3 install torch torchvision opencv-python==3.4.8.29 cython Pillow==6.2.2
+RUN pip3 install torch torchvision opencv-python==3.4.8.29 cython Pillow==6.2.2 scipy
 RUN pip install -U 'git+https://github.com/facebookresearch/fvcore'
 RUN pip install 'git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI'
 
@@ -25,13 +25,22 @@ RUN  pip install --user -e detectron2_repo/projects/TensorMask
 COPY package.json .
 RUN npm install
 
+#denspose model
+RUN wget https://dl.fbaipublicfiles.com/densepose/densepose_rcnn_R_50_FPN_s1x/143908701/model_final_dd99d2.pkl -O /workspace/densepose_rcnn_R_50_FPN_s1x.pkl
+RUN wget http://images.cocodataset.org/val2017/000000439715.jpg -O /workspace/uploads/input.jpg
+
 COPY . .
 RUN mv /workspace/demo.py /workspace/detectron2_repo/demo.py
+RUN mv /workspace/apply_net.py /workspace/detectron2_repo/apply_net.py
+RUN mv /workspace/detectron2_repo/projects/DensePose/densepose/ /workspace/detectron2_repo/densepose    
+RUN cp -rl /workspace/detectron2_repo/projects/DensePose/configs/ /workspace/detectron2_repo/
+RUN mv /workspace/detectron2_repo/demo/predictor.py /workspace/detectron2_repo/predictor.py
 
-RUN wget http://images.cocodataset.org/val2017/000000439715.jpg -O /workspace/uploads/input.jpg
-RUN python /workspace/detectron2_repo/demo.py /workspace/uploads/input.jpg /workspace/sample.jpg
 
-RUN rm /workspace/sample.jpg
+
+RUN python /workspace/detectron2_repo/demo.py --input /workspace/uploads/input.jpg
+
+RUN rm /workspace/uploads/output.jpg
 
 EXPOSE 80
 ENTRYPOINT node server.js
