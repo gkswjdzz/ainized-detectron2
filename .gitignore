@@ -1,9 +1,0 @@
-node_modules
-uploads
-public
-detectron2
-output.jpg
-.vscode
-.DS_Store
-densepose_rcnn_R_50_FPN_s1x.pkl
-swagger.yaml
