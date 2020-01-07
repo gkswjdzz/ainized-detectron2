@@ -12,11 +12,54 @@ var output = path.join(__dirname, "uploads/output.jpg");
 var fullUrl = "",
   kind = "";
 
+function busboyFunc(req, res) {
+  return new Promise((resolve, reject) => {
+    let fileuploaded = true;
+    var busboy = new Busboy({ headers: req.headers });
+    busboy.on("file", function(fieldname, file, filename, encoding, mimetype) {
+      console.log(fieldname, filename, file);
+      if (filename === "") {
+        fileuploaded = false;
+        console.log("here");
+      }
+      console.log(fieldname, filename);
+      file.pipe(fs.createWriteStream(input));
+    });
+
+    busboy.on("field", function(
+      fieldname,
+      val,
+      fieldnameTruncated,
+      valTruncated,
+      encoding,
+      mimetype
+    ) {
+      console.log("Field [" + fieldname + "]: value: " + val);
+      kind = inspect(val).substring(1, inspect(val).length - 1);
+    });
+
+    busboy.on("finish", function() {
+      console.log("Upload complete");
+      if (!fileuploaded) {
+        res.writeHead(400);
+        res.end();
+        return;
+      }
+
+      resolve(kind);
+    });
+
+    req.pipe(busboy);
+    console.log("end fileupload post");
+  });
+}
+
 app.get("/", function(req, res) {
   fullUrl = req.protocol + "://" + req.get("host") + req.originalUrl;
-  console.log(req);
+  //console.log(req);
   console.log(req.headers.host);
   console.log(req.originalUrl);
+  console.log(fullUrl + "densepose");
 
   res.writeHead(200, { "Content-Type": "text/html" });
   res.write(
@@ -36,43 +79,9 @@ app.get("/", function(req, res) {
   return res.end();
 });
 
-app.post("/", function(req, res) {
-  var fileuploaded = true;
-  var busboy = new Busboy({ headers: req.headers });
-  busboy.on("file", function(fieldname, file, filename, encoding, mimetype) {
-    if (filename === "") {
-      fileuploaded = false;
-      console.log("here");
-    }
-    console.log(fieldname, filename);
-    file.pipe(fs.createWriteStream(input));
-  });
-
-  busboy.on("field", function(
-    fieldname,
-    val,
-    fieldnameTruncated,
-    valTruncated,
-    encoding,
-    mimetype
-  ) {
-    console.log("Field [" + fieldname + "]: value: " + inspect(val));
-    kind = inspect(val).substring(1, inspect(val).length - 1);
-  });
-
-  busboy.on("finish", async function() {
-    console.log("Upload complete");
-    if (!fileuploaded) {
-      res.writeHead(400);
-      res.end();
-      return;
-    }
-
-    res.redirect(307, fullUrl + kind);
-  });
-
-  req.pipe(busboy);
-  console.log("end fileupload post");
+app.post("/", async function(req, res){
+  const ret = await busboyFunc(req, res);
+  res.redirect(307, fullUrl + kind + 'Web');
 });
 
 app.post("/readfile", function(req, res) {
@@ -92,6 +101,37 @@ app.post("/readfile", function(req, res) {
 });
 
 app.post("/densepose", async function(req, res) {
+  const ret = await busboyFunc(req, res);
+  console.log(input, output);
+  const { i, o } = await runDensePosePython(input, output);
+
+  console.log(i, o);
+  console.log("start readfile");
+  var s = fs.createReadStream(output);
+  s.on('open', function () {
+    res.set('Content-Type', 'image/png');
+    s.pipe(res);
+  });
+  console.log(output);
+  console.log("end readfile");
+});
+
+app.post("/instancesegmentation", async function(req, res) {
+  console.log(input, output);
+  const { i, o } = await runPython(input, output);
+
+  console.log(i, o);
+  console.log("start readfile");
+  var s = fs.createReadStream(output);
+  s.on('open', function () {
+    res.set('Content-Type', 'image/png');
+    s.pipe(res);
+  });
+  console.log(output);
+  console.log("end readfile");
+});
+
+app.post("/denseposeWeb", async function(req, res) {
   console.log(input, output);
   const { i, o } = await runDensePosePython(input, output);
 
@@ -100,7 +140,7 @@ app.post("/densepose", async function(req, res) {
   res.redirect(307, fullUrl + "readfile");
 });
 
-app.post("/instancesegmentation", async function(req, res) {
+app.post("/instancesegmentationWeb", async function(req, res) {
   console.log(input, output);
   const { i, o } = await runPython(input, output);
 
