@@ -17,13 +17,14 @@ function busboyFunc(req, res) {
     let fileuploaded = true;
     var busboy = new Busboy({ headers: req.headers });
     busboy.on("file", function(fieldname, file, filename, encoding, mimetype) {
-      console.log(fieldname, filename, file);
+      //console.log(fieldname, filename, file);
       if (filename === "") {
         fileuploaded = false;
-        console.log("here");
+        //console.log("here");
       }
-      console.log(fieldname, filename);
+      //console.log(fieldname, filename);
       file.pipe(fs.createWriteStream(input));
+      console.log("busboy.on file");
     });
 
     busboy.on("field", function(
@@ -34,19 +35,24 @@ function busboyFunc(req, res) {
       encoding,
       mimetype
     ) {
-      console.log("Field [" + fieldname + "]: value: " + val);
+      //console.log("Field [" + fieldname + "]: value: " + val);
+      if(val === 'undefined')
+        fileuploaded = false;
       kind = inspect(val).substring(1, inspect(val).length - 1);
+      console.log("busboy.on field");
     });
 
     busboy.on("finish", function() {
-      console.log("Upload complete");
+      console.log("busboy.on finish");
       if (!fileuploaded) {
+        console.log("file upload failed");
         res.writeHead(400);
         res.end();
         return;
       }
 
       resolve(kind);
+      console.log("before busboy dead");
     });
 
     req.pipe(busboy);
@@ -81,14 +87,15 @@ app.get("/", function(req, res) {
 
 app.post("/", async function(req, res){
   const ret = await busboyFunc(req, res);
-  res.redirect(307, fullUrl + kind + 'Web');
+  console.log("redirect to "+ kind);
+  res.redirect(307, fullUrl + kind);
 });
 
 app.post("/readfile", function(req, res) {
   res.writeHead(200, { "Content-Type": "text/html" });
   res.write("<html><body>");
 
-  console.log(output);
+  console.log("start read file " + output);
 
   fs.readFile(output, (err, data) => {
     if (err) throw err;
@@ -97,56 +104,41 @@ app.post("/readfile", function(req, res) {
     res.write('"/>');
     res.end("</body></html>");
   });
-  console.log("end readfile");
+  console.log("end read file");
 });
 
 app.post("/densepose", async function(req, res) {
   const ret = await busboyFunc(req, res);
-  console.log(input, output);
+  console.log("after busboy dead");
+  console.log("start densepose");
+  console.log("before run densepose");
   const { i, o } = await runDensePosePython(input, output);
-
-  console.log(i, o);
-  console.log("start readfile");
+  console.log("after run densepose");
+  console.log("write request");
   var s = fs.createReadStream(output);
   s.on('open', function () {
+    console.log('send image');
     res.set('Content-Type', 'image/png');
     s.pipe(res);
   });
-  console.log(output);
   console.log("end readfile");
 });
 
 app.post("/instancesegmentation", async function(req, res) {
-  console.log(input, output);
+  const ret = await busboyFunc(req, res);
+  console.log("after busboy dead");
+  console.log("start densepose");
+  console.log("before run densepose");
   const { i, o } = await runPython(input, output);
-
-  console.log(i, o);
-  console.log("start readfile");
+  console.log("after run densepose");
+  console.log("write request");
   var s = fs.createReadStream(output);
   s.on('open', function () {
+    console.log("send image")
     res.set('Content-Type', 'image/png');
     s.pipe(res);
   });
-  console.log(output);
   console.log("end readfile");
-});
-
-app.post("/denseposeWeb", async function(req, res) {
-  console.log(input, output);
-  const { i, o } = await runDensePosePython(input, output);
-
-  console.log(i, o);
-  console.log("start readfile");
-  res.redirect(307, fullUrl + "readfile");
-});
-
-app.post("/instancesegmentationWeb", async function(req, res) {
-  console.log(input, output);
-  const { i, o } = await runPython(input, output);
-
-  console.log(i, o);
-  console.log("start readfile");
-  res.redirect(307, fullUrl + "readfile");
 });
 
 app.listen(80, () => {
