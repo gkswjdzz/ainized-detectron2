@@ -37,11 +37,16 @@ RUN cp -rl /workspace/detectron2_repo/projects/DensePose/configs/ /workspace/det
 RUN mv /workspace/detectron2_repo/demo/predictor.py /workspace/detectron2_repo/predictor.py
 
 
-
-RUN python /workspace/detectron2_repo/demo.py --input /workspace/uploads/input.jpg --config-file /workspace/detectron2_repo/configs/quick_schedules/panoptic_fpn_R_50_inference_acc_test.yaml
-RUN python /workspace/detectron2_repo/demo.py --input /workspace/uploads/input.jpg --config-file /workspace/detectron2_repo/configs/quick_schedules/mask_rcnn_R_50_FPN_inference_acc_test.yaml
-
-RUN rm /workspace/uploads/output.jpg
+# model download and test
+RUN python /workspace/detectron2_repo/demo.py \
+    --input /workspace/uploads/input.jpg \
+    --config-file /workspace/detectron2_repo/configs/quick_schedules/panoptic_fpn_R_50_inference_acc_test.yaml
+RUN python /workspace/detectron2_repo/demo.py \
+    --input /workspace/uploads/input.jpg \
+    --config-file /workspace/detectron2_repo/configs/quick_schedules/mask_rcnn_R_50_FPN_inference_acc_test.yaml
+RUN python /workspace/detectron2_repo/demo.py \
+    --input /workspace/uploads/input.jpg \
+    --config-file /workspace/detectron2_repo/configs/quick_schedules/keypoint_rcnn_R_50_FPN_inference_acc_test.yaml
 
 EXPOSE 80
 ENTRYPOINT node server.js

@@ -32,8 +32,12 @@ def get_parser():
         metavar="FILE",
         help="path to config file",
     )
-    parser.add_argument("--input", nargs="+", help="A list of space separated input images")
-    
+    parser.add_argument("--input", help="input images name")
+    parser.add_argument(
+        "--output",
+        default=None,
+        help="output images name",
+    )
     parser.add_argument(
         "--confidence-threshold",
         type=float,
@@ -46,12 +50,14 @@ if __name__ == "__main__":
     args = get_parser().parse_args()
     cfg = setup_cfg(args)
 
-    input = args.input[0]
-    
+    input = args.input
+    output = args.output
     demo = VisualizationDemo(cfg)
     # use PIL, to be consistent with evaluation
     img = read_image(input, format="BGR")
     predictions, visualized_output = demo.run_on_image(img)
-    visualized_output.save(os.path.dirname(input) + '/output.jpg')
 
-    print(input), print("end")
+    if output != None:
+        visualized_output.save(output)
+
+    print(input), print(output)

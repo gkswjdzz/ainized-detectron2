@@ -7,161 +7,109 @@ var http = require("http"),
 const { PythonShell } = require("python-shell");
 
 var app = express();
-var input = path.join(__dirname, "uploads/input.jpg");
-var output = path.join(__dirname, "uploads/output.jpg");
 var repo_dir = '/workspace/detectron2_repo';
 
 var fullUrl = "",
   kind = "";
 
-function busboyFunc(req, res) {
+//return (호출한 알고리즘)
+function busboyFunc(req, res, algorithm) {
   return new Promise((resolve, reject) => {
     let fileuploaded = true;
     var busboy = new Busboy({ headers: req.headers });
+    
     busboy.on("file", function(fieldname, file, filename, encoding, mimetype) {
-      //console.log(fieldname, filename, file);
       if (filename === "") {
         fileuploaded = false;
-        //console.log("here");
       }
-      //console.log(fieldname, filename);
-      file.pipe(fs.createWriteStream(input));
-      console.log("busboy.on file");
+      file.pipe(fs.createWriteStream(__dirname + 'input_' + algorithm + '.jpg'));
     });
 
-    busboy.on("field", function(
-      fieldname,
-      val,
-      fieldnameTruncated,
-      valTruncated,
-      encoding,
-      mimetype
-    ) {
-      //console.log("Field [" + fieldname + "]: value: " + val);
+    busboy.on("field", function(fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) {
       if(val === 'undefined')
         fileuploaded = false;
       kind = inspect(val).substring(1, inspect(val).length - 1);
-      console.log("busboy.on field");
     });
 
     busboy.on("finish", function() {
-      console.log("busboy.on finish");
       if (!fileuploaded) {
-        console.log("file upload failed");
         res.writeHead(400);
         res.end();
         return;
       }
-
+      console.log("before resolve");
       resolve(kind);
-      console.log("before busboy dead");
     });
-
     req.pipe(busboy);
-    console.log("end fileupload post");
-  });
+  }).then(function(kind){
+    console.log("then");
+    return [__dirname + 'input_' + kind + '.jpg', __dirname + 'output_' + kind + '.jpg'];
+  })
 }
 
 app.get("/", function(req, res) {
   fullUrl = req.protocol + "://" + req.get("host") + req.originalUrl;
-  //console.log(req);
-  console.log(req.headers.host);
-  console.log(req.originalUrl);
-  console.log(fullUrl + "densepose");
 
   res.writeHead(200, { "Content-Type": "text/html" });
-  res.write(
-    '<form action="' +
-      fullUrl +
-      '" method="post" enctype="multipart/form-data">'
-  );
+  res.write('<form action="' + fullUrl + '" method="post" enctype="multipart/form-data">');
   res.write('<input type="file" accept="image/*" name="filetoupload"><br>');
-  res.write(
-    '<input type="radio" name="kind" checked="checked" value="densepose" /> DensePose'
-  );
-  res.write(
-    '<input type="radio" name="kind" value="instancesegmentation" /> Instance Segementation'
-  );res.write(
-    '<input type="radio" name="kind" value="panopticsegmentation" /> Panoptic Segmentation'
-  );
+  res.write('<input type="radio" name="kind" checked="checked" value="densepose" /> DensePose<br>');
+  res.write('<input type="radio" name="kind" value="instancesegmentation" /> Instance Segementation<br>');
+  res.write('<input type="radio" name="kind" value="panopticsegmentation" /> Panoptic Segmentation<br>');
+  res.write('<input type="radio" name="kind" value="keypoint" /> Keypoint Detection<br>');
   res.write('<input type="submit">');
   res.write("</form>");
+  
   return res.end();
 });
 
 app.post("/", async function(req, res){
+  console.log("here")
   const ret = await busboyFunc(req, res);
-  console.log("redirect to "+ kind);
   res.redirect(307, fullUrl + kind);
 });
 
-app.post("/readfile", function(req, res) {
-  res.writeHead(200, { "Content-Type": "text/html" });
-  res.write("<html><body>");
-
-  console.log("start read file " + output);
-
-  fs.readFile(output, (err, data) => {
-    if (err) throw err;
-    res.write('<img src="data:image/jpeg;base64,');
-    res.write(Buffer.from(data).toString("base64"));
-    res.write('"/>');
-    res.end("</body></html>");
-  });
-  console.log("end read file");
-});
-
 app.post("/densepose", async function(req, res) {
-  const ret = await busboyFunc(req, res);
-  console.log("after busboy dead");
-  console.log("start densepose");
-  console.log("before run densepose");
-  const { i, o } = await runDensePosePython(input, output);
-  console.log("after run densepose");
-  console.log("write request");
-  var s = fs.createReadStream(output);
+  const [newInput, newOutput] = await busboyFunc(req, res, 'densepose');
+  const { i, o } = await runDensePosePython(newInput, newOutput);
+  var s = fs.createReadStream(newOutput);
   s.on('open', function () {
-    console.log('send image');
     res.set('Content-Type', 'image/png');
     s.pipe(res);
   });
-  console.log("end readfile");
 });
 
 app.post("/panopticsegmentation", async function(req, res) {
-  const ret = await busboyFunc(req, res);
-  console.log("after busboy dead");
-  console.log("start panoptic");
-  console.log("before run panoptic");
+  const [newInput, newOutput] = await busboyFunc(req, res, 'panopticsegmentation');
   config = 'panoptic_fpn_R_50_inference_acc_test.yaml';
-  const { i, o } = await runPython(input, config);
-  console.log("after run panoptic");
-  console.log("write request");
-  var s = fs.createReadStream(output);
+  const { i, o } = await runPython(newInput, newOutput, config);
+  var s = fs.createReadStream(newOutput);
   s.on('open', function () {
-    console.log("send image")
     res.set('Content-Type', 'image/png');
     s.pipe(res);
   });
-  console.log("end readfile");
 });
 
 app.post("/instancesegmentation", async function(req, res) {
-  const ret = await busboyFunc(req, res);
-  console.log("after busboy dead");
-  console.log("start densepose");
-  console.log("before run densepose");
+  const [newInput, newOutput] = await busboyFunc(req, res, 'instancesegmentation');
   config = 'mask_rcnn_R_50_FPN_inference_acc_test.yaml';
-  const { i, o } = await runPython(input, config);
-  console.log("after run densepose");
-  console.log("write request");
-  var s = fs.createReadStream(output);
+  const { i, o } = await runPython(newInput, newOutput, config);
+  var s = fs.createReadStream(newOutput);
   s.on('open', function () {
-    console.log("send image")
     res.set('Content-Type', 'image/png');
     s.pipe(res);
   });
-  console.log("end readfile");
+});
+
+app.post("/keypoint", async function(req, res) {
+  const [newInput, newOutput] = await busboyFunc(req, res, 'keypoint');
+  config = 'keypoint_rcnn_R_50_FPN_inference_acc_test.yaml';
+  const { i, o } = await runPython(newInput, newOutput, config);
+  var s = fs.createReadStream(newOutput);
+  s.on('open', function () {
+    res.set('Content-Type', 'image/png');
+    s.pipe(res);
+  });
 });
 
 app.listen(80, () => {
@@ -169,11 +117,12 @@ app.listen(80, () => {
 });
 
 //run python except densepose
-runPython = (input, config) => {
+runPython = (input, output, config) => {
   return new Promise((resolve, reject) => {
     PythonShell.run(
       repo_dir + "/demo.py",
       { args: ["--input", input,
+              "--output", output,
               "--config-file", repo_dir + "/configs/quick_schedules/" + config ] },
       async (err, result) => {
         if (err) {
@@ -185,7 +134,6 @@ runPython = (input, config) => {
         }
         const inputdir = await result[result.length - 2];
         const outputdir = await result[result.length - 1];
-        console.log(inputdir, outputdir);
         resolve({ inputdir, outputdir });
       }
     );
@@ -218,7 +166,6 @@ runDensePosePython = (input, output) => {
         }
         const inputdir = await result[result.length - 2];
         const outputdir = await result[result.length - 1];
-        console.log(inputdir, outputdir);
         resolve({ inputdir, outputdir });
       }
     );
