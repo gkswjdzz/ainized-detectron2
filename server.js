@@ -9,6 +9,8 @@ const { PythonShell } = require("python-shell");
 var app = express();
 var input = path.join(__dirname, "uploads/input.jpg");
 var output = path.join(__dirname, "uploads/output.jpg");
+var repo_dir = '/workspace/detectron2_repo';
+
 var fullUrl = "",
   kind = "";
 
@@ -79,6 +81,8 @@ app.get("/", function(req, res) {
   );
   res.write(
     '<input type="radio" name="kind" value="instancesegmentation" /> Instance Segementation'
+  );res.write(
+    '<input type="radio" name="kind" value="panopticsegmentation" /> Panoptic Segmentation'
   );
   res.write('<input type="submit">');
   res.write("</form>");
@@ -124,12 +128,31 @@ app.post("/densepose", async function(req, res) {
   console.log("end readfile");
 });
 
+app.post("/panopticsegmentation", async function(req, res) {
+  const ret = await busboyFunc(req, res);
+  console.log("after busboy dead");
+  console.log("start panoptic");
+  console.log("before run panoptic");
+  config = 'panoptic_fpn_R_50_inference_acc_test.yaml';
+  const { i, o } = await runPython(input, config);
+  console.log("after run panoptic");
+  console.log("write request");
+  var s = fs.createReadStream(output);
+  s.on('open', function () {
+    console.log("send image")
+    res.set('Content-Type', 'image/png');
+    s.pipe(res);
+  });
+  console.log("end readfile");
+});
+
 app.post("/instancesegmentation", async function(req, res) {
   const ret = await busboyFunc(req, res);
   console.log("after busboy dead");
   console.log("start densepose");
   console.log("before run densepose");
-  const { i, o } = await runPython(input, output);
+  config = 'mask_rcnn_R_50_FPN_inference_acc_test.yaml';
+  const { i, o } = await runPython(input, config);
   console.log("after run densepose");
   console.log("write request");
   var s = fs.createReadStream(output);
@@ -146,11 +169,12 @@ app.listen(80, () => {
 });
 
 //run python except densepose
-runPython = (input, output) => {
+runPython = (input, config) => {
   return new Promise((resolve, reject) => {
     PythonShell.run(
-      __dirname + "/detectron2_repo/demo.py",
-      { args: ["--input", input] },
+      repo_dir + "/demo.py",
+      { args: ["--input", input,
+              "--config-file", repo_dir + "/configs/quick_schedules/" + config ] },
       async (err, result) => {
         if (err) {
           if (err.traceback === undefined) {
@@ -172,12 +196,12 @@ runPython = (input, output) => {
 runDensePosePython = (input, output) => {
   return new Promise((resolve, reject) => {
     PythonShell.run(
-      __dirname + "/detectron2_repo/apply_net.py",
+      repo_dir + "/apply_net.py",
       {
         args: [
           "show",
-          "/workspace/detectron2_repo/configs/densepose_rcnn_R_50_FPN_s1x.yaml",
-          "/workspace/densepose_rcnn_R_50_FPN_s1x.pkl",
+          repo_dir + "/configs/densepose_rcnn_R_50_FPN_s1x.yaml",
+          repo_dir + "/densepose_rcnn_R_50_FPN_s1x.pkl",
           input,
           "dp_contour,bbox",
           "--output",

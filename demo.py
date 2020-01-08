@@ -18,7 +18,7 @@ def get_parser():
     parser = argparse.ArgumentParser(description="Detectron2 demo for builtin models")
     parser.add_argument(
         "--config-file",
-        default="/workspace/detectron2_repo/configs/quick_schedules/mask_rcnn_R_50_FPN_inference_acc_test.yaml",
+        #default="/workspace/detectron2_repo/configs/quick_schedules/mask_rcnn_R_50_FPN_inference_acc_test.yaml",
         #default="/workspace/detectron2_repo/configs/Cityscapes/mask_rcnn_R_50_FPN.yaml",
         #default="/workspace/detectron2_repo/configs/quick_schedules/keypoint_rcnn_R_50_FPN_inference_acc_test.yaml",
         
@@ -26,6 +26,9 @@ def get_parser():
         #default="/workspace/detectron2_repo/configs/quick_schedules/fast_rcnn_R_50_FPN_inference_acc_test.yaml",
         #not work
         #default="/workspace/detectron2_repo/configs/COCO-PanopticSegmentation/panoptic_fpn_R_101_3x.yaml",
+        
+        #panoptic gogo
+        default="/workspace/detectron2_repo/configs/quick_schedules/panoptic_fpn_R_50_inference_acc_test.yaml",
         metavar="FILE",
         help="path to config file",
     )

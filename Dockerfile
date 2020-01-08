@@ -26,7 +26,7 @@ COPY package.json .
 RUN npm install
 
 #denspose model
-RUN wget https://dl.fbaipublicfiles.com/densepose/densepose_rcnn_R_50_FPN_s1x/143908701/model_final_dd99d2.pkl -O /workspace/densepose_rcnn_R_50_FPN_s1x.pkl
+RUN wget https://dl.fbaipublicfiles.com/densepose/densepose_rcnn_R_50_FPN_s1x/143908701/model_final_dd99d2.pkl -O /workspace/detectron2_repo/densepose_rcnn_R_50_FPN_s1x.pkl
 RUN wget http://images.cocodataset.org/val2017/000000439715.jpg -O /workspace/uploads/input.jpg
 
 COPY . .
@@ -38,7 +38,8 @@ RUN mv /workspace/detectron2_repo/demo/predictor.py /workspace/detectron2_repo/p
 
 
 
-RUN python /workspace/detectron2_repo/demo.py --input /workspace/uploads/input.jpg
+RUN python /workspace/detectron2_repo/demo.py --input /workspace/uploads/input.jpg --config-file /workspace/detectron2_repo/configs/quick_schedules/panoptic_fpn_R_50_inference_acc_test.yaml
+RUN python /workspace/detectron2_repo/demo.py --input /workspace/uploads/input.jpg --config-file /workspace/detectron2_repo/configs/quick_schedules/mask_rcnn_R_50_FPN_inference_acc_test.yaml
 
 RUN rm /workspace/uploads/output.jpg
 
