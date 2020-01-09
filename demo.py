@@ -60,4 +60,5 @@ if __name__ == "__main__":
     if output != None:
         visualized_output.save(output)
 
-    print(input), print(output)
+    print(output)
+    

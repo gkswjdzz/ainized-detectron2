@@ -19,6 +19,7 @@
   "dependencies": {
     "busboy": "^0.3.1",
     "express": "^4.17.1",
-    "python-shell": "^1.0.8"
+    "python-shell": "^1.0.8",
+    "uuid": "^3.3.3"
   }
 }

@@ -4,7 +4,9 @@ var http = require("http"),
   path = require("path"),
   fs = require("fs"),
   inspect = require("util").inspect;
-const { PythonShell } = require("python-shell");
+  uuidv4 = require('uuid/v4');
+
+const { spawn } = require('child_process');
 
 var app = express();
 var repo_dir = '/workspace/detectron2_repo';
@@ -13,16 +15,16 @@ var fullUrl = "",
   kind = "";
 
 //return (호출한 알고리즘)
-function busboyFunc(req, res, algorithm) {
+function busboyFunc(req, res) {
   return new Promise((resolve, reject) => {
     let fileuploaded = true;
     var busboy = new Busboy({ headers: req.headers });
-    
+    uuid4 = uuidv4();
     busboy.on("file", function(fieldname, file, filename, encoding, mimetype) {
       if (filename === "") {
         fileuploaded = false;
       }
-      file.pipe(fs.createWriteStream(__dirname + '/input_' + algorithm + '.jpg'));
+      file.pipe(fs.createWriteStream(__dirname + '/input_' + uuid4 + '.jpg'));
     });
 
     busboy.on("field", function(fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) {
@@ -38,12 +40,13 @@ function busboyFunc(req, res, algorithm) {
         return;
       }
       console.log("before resolve");
-      resolve(kind);
+      resolve(uuid4);
     });
+    
     req.pipe(busboy);
-  }).then(function(kind){
-    console.log("then");
-    return [__dirname + '/input_' + algorithm + '.jpg', __dirname + '/output_' + algorithm + '.jpg'];
+  }).then(function(uuid4){
+    console.log("then" + uuid4);
+    return [__dirname + '/input_' + uuid4 + '.jpg', __dirname + '/output_' + uuid4 + '.jpg'];
   })
 }
 
@@ -54,7 +57,7 @@ app.get("/", function(req, res) {
   res.write('<form action="' + fullUrl + '" method="post" enctype="multipart/form-data">');
   res.write('<input type="file" accept="image/*" name="filetoupload"><br>');
   res.write('<input type="radio" name="kind" checked="checked" value="densepose" /> DensePose<br>');
-  res.write('<input type="radio" name="kind" value="instancesegmentation" /> Instance Segementation<br>');
+  res.write('<input type="radio" name="kind" value="instancesegmentation" /> Instance Segmentation<br>');
   res.write('<input type="radio" name="kind" value="panopticsegmentation" /> Panoptic Segmentation<br>');
   res.write('<input type="radio" name="kind" value="keypoint" /> Keypoint Detection<br>');
   res.write('<input type="submit">');
@@ -64,52 +67,31 @@ app.get("/", function(req, res) {
 });
 
 app.post("/", async function(req, res){
-  console.log("here")
-  const ret = await busboyFunc(req, res);
+  const ret = await busboyFunc(req, res, uuidv4());
   res.redirect(307, fullUrl + kind);
 });
 
 app.post("/densepose", async function(req, res) {
-  const [newInput, newOutput] = await busboyFunc(req, res, 'densepose');
-  const { i, o } = await runDensePosePython(newInput, newOutput);
-  var s = fs.createReadStream(newOutput);
-  s.on('open', function () {
-    res.set('Content-Type', 'image/png');
-    s.pipe(res);
-  });
+  const [newInput, newOutput] = await busboyFunc(req, res);
+  await runDensePosePython(newInput, newOutput, res);
 });
 
 app.post("/panopticsegmentation", async function(req, res) {
-  const [newInput, newOutput] = await busboyFunc(req, res, 'panopticsegmentation');
+  const [newInput, newOutput] = await busboyFunc(req, res);
   config = 'panoptic_fpn_R_50_inference_acc_test.yaml';
-  const { i, o } = await runPython(newInput, newOutput, config);
-  var s = fs.createReadStream(newOutput);
-  s.on('open', function () {
-    res.set('Content-Type', 'image/png');
-    s.pipe(res);
-  });
+  runPython(newInput, newOutput, config, res);
 });
 
 app.post("/instancesegmentation", async function(req, res) {
-  const [newInput, newOutput] = await busboyFunc(req, res, 'instancesegmentation');
+  const [newInput, newOutput] = await busboyFunc(req, res);
   config = 'mask_rcnn_R_50_FPN_inference_acc_test.yaml';
-  const { i, o } = await runPython(newInput, newOutput, config);
-  var s = fs.createReadStream(newOutput);
-  s.on('open', function () {
-    res.set('Content-Type', 'image/png');
-    s.pipe(res);
-  });
+  runPython(newInput, newOutput, config, res);
 });
 
 app.post("/keypoint", async function(req, res) {
-  const [newInput, newOutput] = await busboyFunc(req, res, 'keypoint');
+  const [newInput, newOutput] = await busboyFunc(req, res);
   config = 'keypoint_rcnn_R_50_FPN_inference_acc_test.yaml';
-  const { i, o } = await runPython(newInput, newOutput, config);
-  var s = fs.createReadStream(newOutput);
-  s.on('open', function () {
-    res.set('Content-Type', 'image/png');
-    s.pipe(res);
-  });
+  runPython(newInput, newOutput, config, res);
 });
 
 app.listen(80, () => {
@@ -117,58 +99,39 @@ app.listen(80, () => {
 });
 
 //run python except densepose
-runPython = (input, output, config) => {
-  return new Promise((resolve, reject) => {
-    PythonShell.run(
-      repo_dir + "/demo.py",
-      { args: ["--input", input,
-              "--output", output,
-              "--config-file", repo_dir + "/configs/quick_schedules/" + config ] },
-      async (err, result) => {
-        if (err) {
-          if (err.traceback === undefined) {
-            console.log(err.message);
-          } else {
-            console.log(err.traceback);
-          }
-        }
-        console.log(input, output);
-        const inputdir = await result[result.length - 2];
-        const outputdir = await result[result.length - 1];
-        resolve({ inputdir, outputdir });
-      }
-    );
+runPython = (input, output, config, res) => {
+  const pyProg = spawn('python', 
+    [repo_dir + "/demo.py", 
+      "--input", input,
+      "--output", output,
+      "--config-file", repo_dir + "/configs/quick_schedules/" + config ]);
+  pyProg.stdout.on('data', function(data) {
+    var s = fs.createReadStream(output);
+    s.on('open', function () {
+      res.set('Content-Type', 'image/png');
+      s.pipe(res);
+    });
   });
 };
 
 // run densepose
-runDensePosePython = (input, output) => {
-  return new Promise((resolve, reject) => {
-    PythonShell.run(
-      repo_dir + "/apply_net.py",
-      {
-        args: [
-          "show",
-          repo_dir + "/configs/densepose_rcnn_R_50_FPN_s1x.yaml",
-          repo_dir + "/densepose_rcnn_R_50_FPN_s1x.pkl",
-          input,
-          "dp_contour,bbox",
-          "--output",
-          output
-        ]
-      },
-      async (err, result) => {
-        if (err) {
-          if (err.traceback === undefined) {
-            console.log(err.message);
-          } else {
-            console.log(err.traceback);
-          }
-        }
-        const inputdir = await result[result.length - 2];
-        const outputdir = await result[result.length - 1];
-        resolve({ inputdir, outputdir });
-      }
-    );
+runDensePosePython = (input, output, res) => {
+  const pyProg = spawn('python', 
+    [
+      repo_dir + "/apply_net.py", 
+      "show",
+      repo_dir + "/configs/densepose_rcnn_R_50_FPN_s1x.yaml",
+      repo_dir + "/densepose_rcnn_R_50_FPN_s1x.pkl",
+      input,
+      "dp_contour,bbox",
+      "--output",
+      output 
+    ]);
+  pyProg.stdout.on('data', function(data) {
+    var s = fs.createReadStream(output);
+    s.on('open', function () {
+      res.set('Content-Type', 'image/png');
+      s.pipe(res);
+    });
   });
 };
