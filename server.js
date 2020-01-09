@@ -22,7 +22,7 @@ function busboyFunc(req, res, algorithm) {
       if (filename === "") {
         fileuploaded = false;
       }
-      file.pipe(fs.createWriteStream(__dirname + 'input_' + algorithm + '.jpg'));
+      file.pipe(fs.createWriteStream(__dirname + '/input_' + algorithm + '.jpg'));
     });
 
     busboy.on("field", function(fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) {
@@ -43,7 +43,7 @@ function busboyFunc(req, res, algorithm) {
     req.pipe(busboy);
   }).then(function(kind){
     console.log("then");
-    return [__dirname + 'input_' + kind + '.jpg', __dirname + 'output_' + kind + '.jpg'];
+    return [__dirname + '/input_' + kind + '.jpg', __dirname + '/output_' + kind + '.jpg'];
   })
 }
 
