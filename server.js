@@ -43,7 +43,7 @@ function busboyFunc(req, res, algorithm) {
     req.pipe(busboy);
   }).then(function(kind){
     console.log("then");
-    return [__dirname + '/input_' + kind + '.jpg', __dirname + '/output_' + kind + '.jpg'];
+    return [__dirname + '/input_' + algorithm + '.jpg', __dirname + '/output_' + algorithm + '.jpg'];
   })
 }
 
@@ -132,6 +132,7 @@ runPython = (input, output, config) => {
             console.log(err.traceback);
           }
         }
+        console.log(input, output);
         const inputdir = await result[result.length - 2];
         const outputdir = await result[result.length - 1];
         resolve({ inputdir, outputdir });
