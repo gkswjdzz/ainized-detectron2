@@ -1,13 +1,19 @@
 [![Run on Ainize](https://ainize.ai/static/images/run_on_ainize_button.svg)](https://ainize.web.app/redirect?git_repo=github.com/gkswjdzz/ainized-detectron2)
-# ainized-detectron2
+# Ainized-Detectron2
 
-This repository provides a server that infers instance segmentation for an image based on a Mast R-CNN R-50-FPN model. The model used in the server is from [Facebookresearch/detectron2](https://github.com/facebookresearch/detectron2), which is an implementation of FAIR(Facebook AI Research) paper "Mask R-CNN". 
+[Detectron2](https://github.com/facebookresearch/detectron2) is the object detection open source project based on the pytorch made in the Facebook AI Research (FAIR). With modular design, Detectron2 is more flexible, extensible than the existing Detectron. Detectron2 provides models of object detection such as panoptic segmentation, DensePose, Cascade RCNN, and more based on a variety of backbones.
+
+In this Ainize project, you can receive the inferred result image after selecting one of the inference models. All the inference models used Resnet 50 + FPN (Feature Pyramid Network) as a backbone.
 
 The inference using server is done in the following steps:
 1. User publishes an image file
-2. server returns a instance segmentation.
+2. server returns a inferred image
 
 Note that the server is implemented in Node.js.
+
+You can see the demo server from below site
+
+https://endpoint.ainize.ai/gkswjdzz/ainized-detectron2/
 
 # How to deploy
 
@@ -22,33 +28,10 @@ docker build -t detectron2 .
 ```
 docker run -p 80:80 -it detectron2
 ```
-<!--
-### Upload image
-
-<img src="/images/image1.png" width="250" />
-<img src="/images/image2.png" width="250" />
--->
 
 Now the server is available at http://localhost.
 
 Note that the docker image can be deployed using any docker-based deploy platform (e.g. [ainize.ai](https://ainize.ai)).
-
-You can see the demo server from below site
-
-https://endpoint.ainize.ai/gkswjdzz/ainized-detectron2/
-
-# How to publish an image file
-
-The image to be evaluated needs to be published first. You can refer to the two following examples of how to publish image files: 
-
-Upload your image and submit image.
-
-<img src="/images/image1.png" width="250" />  
-<img src="/images/image2.png" width="250" />
-
-The result is like this
-
-<img src="/images/image3.png" width="250" />
 
 # References
 1. [facebookresearch/detectron2](https://github.com/facebookresearch/detectron2)

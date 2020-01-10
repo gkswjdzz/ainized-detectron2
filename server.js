@@ -45,7 +45,7 @@ function busboyFunc(req, res) {
     
     req.pipe(busboy);
   }).then(function(uuid4){
-    console.log("then" + uuid4);
+    console.log("then " + uuid4);
     return [__dirname + '/input_' + uuid4 + '.jpg', __dirname + '/output_' + uuid4 + '.jpg'];
   })
 }
