@@ -18,6 +18,7 @@
   "homepage": "https://github.com/gkswjdzz/ainize-run-detectron2#readme",
   "dependencies": {
     "busboy": "^0.3.1",
+    "cors": "^2.8.5",
     "express": "^4.17.1",
     "python-shell": "^1.0.8",
     "uuid": "^3.3.3"

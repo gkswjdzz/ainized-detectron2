@@ -1,5 +1,6 @@
 var http = require("http"),
   express = require("express"),
+  cors = require("cors"),
   Busboy = require("busboy"),
   path = require("path"),
   fs = require("fs"),
@@ -9,6 +10,9 @@ var http = require("http"),
 const { spawn } = require('child_process');
 
 var app = express();
+app.use(cors({
+  origin: 'https://ainize.ai',
+}));
 var repo_dir = '/workspace/detectron2_repo';
 
 var fullUrl = "",
