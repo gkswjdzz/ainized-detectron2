@@ -1,0 +1,127 @@
+openapi: 3.0.0
+info:
+  title: Detectron2
+  version: 0.1.0
+  description: "## Detectron2 - PyTorch-based Object Detection Opensource Project by Facebook AI Research.\n[Detectron2](https://github.com/facebookresearch/detectron2) is Facebook AI Research's next generation software system that implements state-of-the-art object detection algorithms.\n\nIt is a ground-up rewrite of the previous version, [Detectron](https://github.com/facebookresearch/Detectron/).\n### Supported Algorithm:\n- Panoptic Segmentation\n- Instance Segmentation (Mask RCNN R-50-FPN model)\n- DensePose\n- Cascade RCNN\n"
+  contact:
+    name: API Support (Feature Request, Report Issue)
+    url: 'https://github.com/gkswjdzz/ainized-detectron2'
+externalDocs:
+  url: http://cocodataset.org/#explore
+  description: 'Dataset Links - EXPLORE Sample Datasets'    
+paths:
+  /instancesegmentation:
+    post:
+      tags: 
+        - Instance Segmentation
+      summary: Run Instance Segmentation (Mask R-CNN)
+      description: "Paper Link: [https://paperswithcode.com/paper/mask-r-cnn](https://paperswithcode.com/paper/mask-r-cnn)\n\n [Sample Photo Download Link](http://farm8.staticflickr.com/7281/8741619051_55ff878e1e_z.jpg)"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Result Image.
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Bad request
+  /densepose:
+    post:
+      tags: 
+        - DensePose
+      summary: Run DensePose
+      description: "Paper Link: [https://paperswithcode.com/paper/densepose-dense-human-pose-estimation-in-the](https://paperswithcode.com/paper/densepose-dense-human-pose-estimation-in-the)\n\n [Sample Photo Download Link](http://farm8.staticflickr.com/7281/8741619051_55ff878e1e_z.jpg)"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Result Image.
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Bad request
+  /panopticsegmentation:
+    post:
+      tags: 
+        - Panoptic Segmentation
+      summary: Run Panoptic Segmentation
+      description: "Paper Link: [https://arxiv.org/pdf/1901.02446.pdf](https://arxiv.org/pdf/1901.02446.pdf)\n\n [Sample Photo Download Link](http://farm8.staticflickr.com/7281/8741619051_55ff878e1e_z.jpg)"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Result Image.
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Bad request
+  /keypoint:
+    post:
+      tags: 
+        - Person Keypoint Detection
+      summary: Run Person Keypoint Detection
+      description: "Paper Link: [https://paperswithcode.com/task/keypoint-detection](https://paperswithcode.com/task/keypoint-detection)\n\n [Sample Photo Download Link](http://farm8.staticflickr.com/7281/8741619051_55ff878e1e_z.jpg)"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Result Image.
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Bad request
+tags:
+  - name: Panoptic Segmentation
+  - name: Instance Segmentation
+    externalDocs:
+      url: 'https://paperswithcode.com/paper/mask-r-cnn'
+  - name: DensePose
+    externalDocs:
+      description: ''
+      url: >-
+        https://paperswithcode.com/paper/densepose-dense-human-pose-estimation-in-the
+  - name: Person Keypoint Detection
+servers:
+  - url: 'https://detectron2-gpu.gkswjdzz.endpoint.dev.ainize.ai'
+
+security: []
