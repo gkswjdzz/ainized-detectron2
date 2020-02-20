@@ -110,12 +110,19 @@ runPython = (input, output, config, res) => {
       "--output", output,
       "--config-file", repo_dir + "/configs/quick_schedules/" + config ]);
   pyProg.stdout.on('data', function(data) {
+    console.log('runPython func stdout : ' + data.toString());
+  });
+  pyProg.stderr.on('data', function(data) {
+    console.log('runPython func stderr : ' + data.toString()); 
+  });
+  pyProg.on('close', (code) => {
+    console.log('runPython exit code : ' + code);
     var s = fs.createReadStream(output);
     s.on('open', function () {
       res.set('Content-Type', 'image/png');
       s.pipe(res);
     });
-  });
+  })
 };
 
 // run densepose
@@ -132,10 +139,17 @@ runDensePosePython = (input, output, res) => {
       output 
     ]);
   pyProg.stdout.on('data', function(data) {
+    console.log('runPython func stdout : ' + data.toString());
+  });
+  pyProg.stderr.on('data', function(data) {
+    console.log('runPython func stderr : ' + data.toString()); 
+  });
+  pyProg.on('close', (code) => {
+    console.log('Densepose exit code : ' + code);
     var s = fs.createReadStream(output);
     s.on('open', function () {
       res.set('Content-Type', 'image/png');
       s.pipe(res);
     });
-  });
+  })
 };
