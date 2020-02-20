@@ -131,7 +131,7 @@ runDensePosePython = (input, output, res) => {
     [
       repo_dir + "/apply_net.py", 
       "show",
-      repo_dir + "/configs/densepose_rcnn_R_50_FPN_s1x.yaml",
+      repo_dir + "/configs/densepose_rcnn_R_50_FPN_s1x_legacy.yaml",
       repo_dir + "/densepose_rcnn_R_50_FPN_s1x.pkl",
       input,
       "dp_contour,bbox",
