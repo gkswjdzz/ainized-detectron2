@@ -1,5 +1,6 @@
 import argparse
 import os
+import json
 from detectron2.config import get_cfg
 from detectron2.data.detection_utils import read_image
 from predictor import VisualizationDemo
@@ -18,17 +19,8 @@ def get_parser():
     parser = argparse.ArgumentParser(description="Detectron2 demo for builtin models")
     parser.add_argument(
         "--config-file",
-        #default="/workspace/detectron2_repo/configs/quick_schedules/mask_rcnn_R_50_FPN_inference_acc_test.yaml",
-        #default="/workspace/detectron2_repo/configs/Cityscapes/mask_rcnn_R_50_FPN.yaml",
-        #default="/workspace/detectron2_repo/configs/quick_schedules/keypoint_rcnn_R_50_FPN_inference_acc_test.yaml",
+        default="/workspace/detectron2_repo/configs/quick_schedules/mask_rcnn_R_50_FPN_inference_acc_test.yaml",
         
-        #proposal required
-        #default="/workspace/detectron2_repo/configs/quick_schedules/fast_rcnn_R_50_FPN_inference_acc_test.yaml",
-        #not work
-        #default="/workspace/detectron2_repo/configs/COCO-PanopticSegmentation/panoptic_fpn_R_101_3x.yaml",
-        
-        #panoptic gogo
-        default="/workspace/detectron2_repo/configs/quick_schedules/panoptic_fpn_R_50_inference_acc_test.yaml",
         metavar="FILE",
         help="path to config file",
     )
@@ -52,13 +44,16 @@ if __name__ == "__main__":
 
     input = args.input
     output = args.output
-    demo = VisualizationDemo(cfg)
+    
+    debug = output is not None
+    demo = VisualizationDemo(cfg, debug)
     # use PIL, to be consistent with evaluation
     img = read_image(input, format="BGR")
-    predictions, visualized_output = demo.run_on_image(img)
+    predictions, visualized_output, obj = demo.run_on_image(img, debug)
 
     if output != None:
         visualized_output.save(output)
-
-    print(output)
+        print(output)
+    else:
+        print(json.dumps(obj))
     

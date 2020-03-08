@@ -75,6 +75,12 @@ app.post("/", async function(req, res){
   res.redirect(307, fullUrl + kind);
 });
 
+app.post("/predictions", async (req, res) => {
+  const [newInput, newOutput] = await busboyFunc(req, res);
+  //no use newOutput
+  await runGetPredictions(newInput, res);
+})
+
 app.post("/densepose", async function(req, res) {
   const [newInput, newOutput] = await busboyFunc(req, res);
   await runDensePosePython(newInput, newOutput, res);
@@ -102,13 +108,32 @@ app.listen(80, () => {
   console.log("server connect");
 });
 
+runGetPredictions = (input, res) => {
+  //there is no output argument, use default config
+  const argument = [repo_dir + "/demo.py", "--input", input]
+  const pyProg = spawn('python', argument);
+  
+  let result = ""
+  pyProg.stdout.on('data', function(data) {
+    result += data.toString()
+    console.log('runGetPredictions func stdout : ' + data.toString());
+  });
+  
+  pyProg.stderr.on('data', function(data) {
+    console.log('runGetPredictions func stderr : ' + data.toString()); 
+  });
+  pyProg.on('close', (code) => {
+    console.log('runGetPredictions exit code : ' + code);
+    let obj = JSON.parse(result)
+    res.json(obj)
+  })
+}
+
 //run python except densepose
 runPython = (input, output, config, res) => {
-  const pyProg = spawn('python', 
-    [repo_dir + "/demo.py", 
-      "--input", input,
-      "--output", output,
-      "--config-file", repo_dir + "/configs/quick_schedules/" + config ]);
+  const argument = [repo_dir + "/demo.py", "--input", input, "--output", output, "--config-file", repo_dir + "/configs/quick_schedules/" + config ]
+  const pyProg = spawn('python', argument);
+
   pyProg.stdout.on('data', function(data) {
     console.log('runPython func stdout : ' + data.toString());
   });
