@@ -7,13 +7,13 @@ In this Ainize project, you can receive the inferred result image after selectin
 
 The inference using server is done in the following steps:
 1. User publishes an image file
-2. server returns a inferred image
+2. server returns a inferred image or json which is information of detected objects.
 
 Note that the server is implemented in Node.js.
 
 You can see the demo server from below site
 
-https://endpoint.ainize.ai/gkswjdzz/ainized-detectron2/
+https://ainize.ai/deployments/github.com/gkswjdzz/ainized-detectron2
 
 # How to deploy
 
