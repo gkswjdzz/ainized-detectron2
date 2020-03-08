@@ -10,6 +10,28 @@ externalDocs:
   url: http://cocodataset.org/#explore
   description: 'Dataset Links - EXPLORE Sample Datasets'    
 paths:
+  /predictions:
+    post:
+      tags:
+        - Object Classification
+      summary: Getting the class and coordinates of the detected object
+      description: "[Sample Photo Download Link](http://farm8.staticflickr.com/7281/8741619051_55ff878e1e_z.jpg)"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Result Json.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Predictions'
   /instancesegmentation:
     post:
       tags: 
@@ -111,6 +133,7 @@ paths:
         '400':
           description: Bad request
 tags:
+  - name: Object Classification
   - name: Panoptic Segmentation
   - name: Instance Segmentation
     externalDocs:
@@ -122,6 +145,50 @@ tags:
         https://paperswithcode.com/paper/densepose-dense-human-pose-estimation-in-the
   - name: Person Keypoint Detection
 servers:
-  - url: 'https://ainized-detectron2.gkswjdzz.endpoint.ainize.ai'
+  - url: 'https://detectron2-cpu.gkswjdzz.endpoint.dev.ainize.ai'
 
 security: []
+
+components:
+  schemas:
+    Predictions:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/Prediction'
+    Prediction:
+      type: object
+      properties:
+        class: 
+          type: string
+          description: estimated class of boundary box
+        score:
+          type: string
+          description: boundary box confidence score
+        left-up:
+          $ref: '#/components/schemas/Points-number'
+        right-down:
+          $ref: '#/components/schemas/Points-number'
+        Polygons:
+          $ref: '#/components/schemas/Points-integers'
+    Points-number:
+      type: object
+      properties:
+        x: 
+          type: number
+          description: The x-coordinate.
+        y:
+          type: number
+          description: The y-coordinate.
+    Points-integers:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/Points-integer'
+    Points-integer:
+      type: object
+      properties:
+        x: 
+          type: integer
+          description: The x-coordinate.
+        y:
+          type: integer
+          description: The y-coordinate.

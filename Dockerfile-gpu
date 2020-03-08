@@ -1,4 +1,3 @@
-#FROM pytorch/pytorch
 FROM nvidia/cuda:10.0-cudnn7-devel
 CMD ["bash"]
 
@@ -48,25 +47,31 @@ COPY apply_net.py .
 COPY apply_net-gpu.py .
 COPY demo.py .
 COPY demo-gpu.py .
+COPY predictor.py .
 
 RUN mv /workspace/demo-gpu.py /workspace/detectron2_repo/demo.py
 RUN mv /workspace/apply_net-gpu.py /workspace/detectron2_repo/apply_net.py
+RUN mv /workspace/predictor.py /workspace/detectron2_repo/predictor.py
+
 RUN mv /workspace/detectron2_repo/projects/DensePose/densepose/ /workspace/detectron2_repo/densepose    
 RUN cp -rl /workspace/detectron2_repo/projects/DensePose/configs/ /workspace/detectron2_repo/
-RUN mv /workspace/detectron2_repo/demo/predictor.py /workspace/detectron2_repo/predictor.py
 
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python2.7 1
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.6 2
 RUN python --version
+
 # model download and test
 RUN python /workspace/demo.py \
     --input /workspace/uploads/input.jpg \
+    --output /workspace/uploads/output_test1.jpg \
     --config-file /workspace/detectron2_repo/configs/quick_schedules/panoptic_fpn_R_50_inference_acc_test.yaml
 RUN python /workspace/demo.py \
     --input /workspace/uploads/input.jpg \
+    --output /workspace/uploads/output_test2.jpg \
     --config-file /workspace/detectron2_repo/configs/quick_schedules/mask_rcnn_R_50_FPN_inference_acc_test.yaml
 RUN python /workspace/demo.py \
     --input /workspace/uploads/input.jpg \
+    --output /workspace/uploads/output_test3.jpg \
     --config-file /workspace/detectron2_repo/configs/quick_schedules/keypoint_rcnn_R_50_FPN_inference_acc_test.yaml
 
 COPY server.js .
