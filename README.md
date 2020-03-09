@@ -20,11 +20,17 @@ https://ainize.ai/deployments/github.com/gkswjdzz/ainized-detectron2
 this server is dockerized, so it can be built and run using docker commands.
 
 ## Docker build
+
 ```
-docker build -t detectron2 .
+docker build -t detectron2 -f Dockerfile-cpu .
+```
+or
+```
+docker build -t detectron2 -f Dockerfile-gpu .
 ```
 
-## Docker run
+## Run Docker
+
 ```
 docker run -p 80:80 -it detectron2
 ```
