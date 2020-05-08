@@ -27,43 +27,13 @@ from densepose.vis.densepose import (
 )
 from densepose.vis.extractor import CompoundExtractor, create_extractor
 
-DOC = """Apply Net - a tool to print / visualize DensePose results
-"""
-
 LOGGER_NAME = "apply_net"
 logger = logging.getLogger(LOGGER_NAME)
 
-_ACTION_REGISTRY: Dict[str, "Action"] = {}
-
-
 class Action(object):
-    @classmethod
-    def add_arguments(cls: type, parser: argparse.ArgumentParser):
-        parser.add_argument(
-            "-v",
-            "--verbosity",
-            action="count",
-            help="Verbose mode. Multiple -v options increase the verbosity.",
-        )
-
-
-def register_action(cls: type):
-    """
-    Decorator for action classes to automate action registration
-    """
-    global _ACTION_REGISTRY
-    _ACTION_REGISTRY[cls.COMMAND] = cls
-    return cls
-
+    pass
 
 class InferenceAction(Action):
-    @classmethod
-    def add_arguments(cls: type, parser: argparse.ArgumentParser):
-        super(InferenceAction, cls).add_arguments(parser)
-        parser.add_argument("cfg", metavar="<config>", help="Config file")
-        parser.add_argument("model", metavar="<model>", help="Model file")
-        parser.add_argument("input", metavar="<input>", help="Input data")
-
     @classmethod
     def execute(cls: type, args: argparse.Namespace):
         logger.info(f"Loading config from {args.cfg}")
@@ -72,17 +42,20 @@ class InferenceAction(Action):
         logger.info(f"Loading model from {args.model}")
         predictor = DefaultPredictor(cfg)
         logger.info(f"Loading data from {args.input}")
-        file_list = cls._get_input_file_list(args.input)
-        if len(file_list) == 0:
-            logger.warning(f"No input images for {args.input}")
-            return
+        # file_list = cls._get_input_file_list(args.input)
+        # if len(file_list) == 0:
+        #    logger.warning(f"No input images for {args.input}")
+        #    return
+        file_list = [args.input]
         context = cls.create_context(args)
         for file_name in file_list:
-            img = read_image(file_name, format="BGR")  # predictor expects BGR image.
+            img = file_name
+            # img = read_image(file_name, format="BGR")  # predictor expects BGR image.
             with torch.no_grad():
                 outputs = predictor(img)["instances"]
-                cls.execute_on_outputs(context, {"file_name": file_name, "image": img}, outputs)
+                out_binary = cls.execute_on_outputs(context, {"file_name": file_name, "image": img}, outputs)
         cls.postexecute(context)
+        return out_binary
 
     @classmethod
     def setup_config(
@@ -98,80 +71,6 @@ class InferenceAction(Action):
         cfg.freeze()
         return cfg
 
-    @classmethod
-    def _get_input_file_list(cls: type, input_spec: str):
-        if os.path.isdir(input_spec):
-            file_list = [
-                os.path.join(input_spec, fname)
-                for fname in os.listdir(input_spec)
-                if os.path.isfile(os.path.join(input_spec, fname))
-            ]
-        elif os.path.isfile(input_spec):
-            file_list = [input_spec]
-        else:
-            file_list = glob.glob(input_spec)
-        return file_list
-
-
-@register_action
-class DumpAction(InferenceAction):
-    """
-    Dump action that outputs results to a pickle file
-    """
-
-    COMMAND: ClassVar[str] = "dump"
-
-    @classmethod
-    def add_parser(cls: type, subparsers: argparse._SubParsersAction):
-        parser = subparsers.add_parser(cls.COMMAND, help="Dump model outputs to a file.")
-        cls.add_arguments(parser)
-        parser.set_defaults(func=cls.execute)
-
-    @classmethod
-    def add_arguments(cls: type, parser: argparse.ArgumentParser):
-        super(DumpAction, cls).add_arguments(parser)
-        parser.add_argument(
-            "--output",
-            metavar="<dump_file>",
-            default="results.pkl",
-            help="File name to save dump to",
-        )
-
-    @classmethod
-    def execute_on_outputs(
-        cls: type, context: Dict[str, Any], entry: Dict[str, Any], outputs: Instances
-    ):
-        image_fpath = entry["file_name"]
-        logger.info(f"Processing {image_fpath}")
-        result = {"file_name": image_fpath}
-        if outputs.has("scores"):
-            result["scores"] = outputs.get("scores").cpu()
-        if outputs.has("pred_boxes"):
-            result["pred_boxes_XYXY"] = outputs.get("pred_boxes").tensor.cpu()
-            if outputs.has("pred_densepose"):
-                boxes_XYWH = BoxMode.convert(
-                    result["pred_boxes_XYXY"], BoxMode.XYXY_ABS, BoxMode.XYWH_ABS
-                )
-                result["pred_densepose"] = outputs.get("pred_densepose").to_result(boxes_XYWH)
-        context["results"].append(result)
-
-    @classmethod
-    def create_context(cls: type, args: argparse.Namespace):
-        context = {"results": [], "out_fname": args.output}
-        return context
-
-    @classmethod
-    def postexecute(cls: type, context: Dict[str, Any]):
-        out_fname = context["out_fname"]
-        out_dir = os.path.dirname(out_fname)
-        if len(out_dir) > 0 and not os.path.exists(out_dir):
-            os.makedirs(out_dir)
-        with open(out_fname, "wb") as hFile:
-            pickle.dump(context["results"], hFile)
-            logger.info(f"Output saved to {out_fname}")
-
-
-@register_action
 class ShowAction(InferenceAction):
     """
     Show action that visualizes selected entries on an image
@@ -185,38 +84,6 @@ class ShowAction(InferenceAction):
         "dp_v": DensePoseResultsVVisualizer,
         "bbox": ScoredBoundingBoxVisualizer,
     }
-
-    @classmethod
-    def add_parser(cls: type, subparsers: argparse._SubParsersAction):
-        parser = subparsers.add_parser(cls.COMMAND, help="Visualize selected entries")
-        cls.add_arguments(parser)
-        parser.set_defaults(func=cls.execute)
-
-    @classmethod
-    def add_arguments(cls: type, parser: argparse.ArgumentParser):
-        super(ShowAction, cls).add_arguments(parser)
-        parser.add_argument(
-            "visualizations",
-            metavar="<visualizations>",
-            help="Comma separated list of visualizations, possible values: "
-            "[{}]".format(",".join(sorted(cls.VISUALIZERS.keys()))),
-        )
-        parser.add_argument(
-            "--min_score",
-            metavar="<score>",
-            default=0.8,
-            type=float,
-            help="Minimum detection score to visualize",
-        )
-        parser.add_argument(
-            "--nms_thresh", metavar="<threshold>", default=None, type=float, help="NMS threshold"
-        )
-        parser.add_argument(
-            "--output",
-            metavar="<image_file>",
-            default="outputres.png",
-            help="File name to save output to",
-        )
 
     @classmethod
     def setup_config(
@@ -236,7 +103,6 @@ class ShowAction(InferenceAction):
     ):
         import cv2
         import numpy as np
-
         visualizer = context["visualizer"]
         extractor = context["extractor"]
         image_fpath = entry["file_name"]
@@ -247,13 +113,13 @@ class ShowAction(InferenceAction):
         image_vis = visualizer.visualize(image, data)
         entry_idx = context["entry_idx"] + 1
         out_fname = cls._get_out_fname(entry_idx, context["out_fname"])
-        out_dir = os.path.dirname(out_fname)
-        if len(out_dir) > 0 and not os.path.exists(out_dir):
-            os.makedirs(out_dir)
-        cv2.imwrite(out_fname, image_vis)
+        # out_dir = os.path.dirname(out_fname)
+        # if len(out_dir) > 0 and not os.path.exists(out_dir):
+        #    os.makedirs(out_dir)
+        # cv2.imwrite(out_fname, image_vis)
         logger.info(f"Output saved to {out_fname}")
         context["entry_idx"] += 1
-
+        return cv2.imencode('.jpg', image_vis)[1]
     @classmethod
     def postexecute(cls: type, context: Dict[str, Any]):
         pass
@@ -283,28 +149,23 @@ class ShowAction(InferenceAction):
         }
         return context
 
-
-def create_argument_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description=DOC,
-        formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=120),
-    )
-    parser.set_defaults(func=lambda _: parser.print_help(sys.stdout))
-    subparsers = parser.add_subparsers(title="Actions")
-    for _, action in _ACTION_REGISTRY.items():
-        action.add_parser(subparsers)
-    return parser
-
-
-def main():
-    parser = create_argument_parser()
-    args = parser.parse_args()
+def main(file_in_memory):
+    args = argparse.Namespace()
+    args.cfg='/workspace/detectron2_repo/configs/densepose_rcnn_R_50_FPN_s1x_legacy.yaml'
+    args.func=ShowAction.execute
+    args.input=file_in_memory
+    args.min_score=0.8
+    args.model='/workspace/detectron2_repo/densepose_rcnn_R_50_FPN_s1x.pkl'
+    args.nms_thresh=None
+    args.output='outputres2.png'
+    args.verbosity=None
+    args.visualizations='dp_contour,bbox'
     verbosity = args.verbosity if hasattr(args, "verbosity") else None
     global logger
     logger = setup_logger(name=LOGGER_NAME)
     logger.setLevel(verbosity_to_level(verbosity))
-    args.func(args)
-    print("complete"), print("!")
+    out_binary_buffer = args.func(args)
+    return out_binary_buffer
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#    main()
