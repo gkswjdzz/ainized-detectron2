@@ -7,7 +7,7 @@ import cv2
 import io
 
 import subprocess 
-from apply_net import main as apply_net_main
+from apply_net-gpu import main as apply_net_main
 
 app = Flask(__name__)
 
@@ -32,6 +32,8 @@ def run_python(method):
 
   if input_file_in_memory is None :
     return jsonify({'message': 'invalid file'}), 400
+  
+  print(input_file_in_memory.shape)
   if input_file_in_memory.shape[2] == 4 :
     input_file_in_memory = input_file_in_memory[:,:,0:-1]
     

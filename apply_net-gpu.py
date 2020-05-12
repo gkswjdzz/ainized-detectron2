@@ -166,6 +166,3 @@ def main(file_in_memory):
     logger.setLevel(verbosity_to_level(verbosity))
     out_binary_buffer = args.func(args)
     return out_binary_buffer
-
-# if __name__ == "__main__":
-#    main()
