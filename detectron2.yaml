@@ -145,7 +145,7 @@ tags:
         https://paperswithcode.com/paper/densepose-dense-human-pose-estimation-in-the
   - name: Person Keypoint Detection
 servers:
-  - url: 'https://detectron2-cpu.gkswjdzz.endpoint.dev.ainize.ai'
+  - url: 'https://ainized-detectron2.gkswjdzz.endpoint.ainize.ai'
 
 security: []
 

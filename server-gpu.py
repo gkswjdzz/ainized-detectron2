@@ -20,6 +20,10 @@ def setup_cfg(config_file, confidence_threshold = 0.5, is_gpu = False):
     cfg.freeze()
     return cfg
 
+@app.route('/health')
+def health():
+  return "ok"
+
 @app.route('/<method>', methods=['POST'])
 def run_python(method):
   filestr = request.files['file'].read()

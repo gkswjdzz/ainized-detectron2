@@ -10,11 +10,13 @@ WORKDIR /workspace
 COPY requirements.txt .
 RUN pip install numpy
 RUN pip install -r requirements.txt
-
+RUN pip install torch==1.5
 RUN git clone https://github.com/facebookresearch/detectron2 detectron2_repo
-RUN pip install --user -e detectron2_repo
+RUN pip install -e detectron2_repo
 
-RUN  pip install --user -e detectron2_repo/projects/TensorMask
+RUN  pip install -e detectron2_repo/projects/TensorMask
+
+RUN pip install torchvision
 
 #denspose model
 RUN wget https://dl.fbaipublicfiles.com/densepose/densepose_rcnn_R_50_FPN_s1x/143908701/model_final_dd99d2.pkl -O /workspace/detectron2_repo/densepose_rcnn_R_50_FPN_s1x.pkl
