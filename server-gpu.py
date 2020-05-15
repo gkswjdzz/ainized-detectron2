@@ -7,7 +7,7 @@ import cv2
 import io
 
 import subprocess 
-from apply_net-gpu import main as apply_net_main
+from apply_net import main as apply_net_main
 
 app = Flask(__name__)
 
@@ -17,6 +17,7 @@ def setup_cfg(config_file, confidence_threshold = 0.5, is_gpu = False):
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = confidence_threshold
     cfg.MODEL.PANOPTIC_FPN.COMBINE.INSTANCES_CONFIDENCE_THRESH = confidence_threshold
     cfg.MODEL.DEVICE = 'cpu' if is_gpu == False else 'cuda'
+    print(cfg.MODEL.DEVICE)
     cfg.freeze()
     return cfg
 

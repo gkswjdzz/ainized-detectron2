@@ -17,6 +17,7 @@ def setup_cfg(config_file, confidence_threshold = 0.5, is_gpu = False):
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = confidence_threshold
     cfg.MODEL.PANOPTIC_FPN.COMBINE.INSTANCES_CONFIDENCE_THRESH = confidence_threshold
     cfg.MODEL.DEVICE = 'cpu' if is_gpu == False else 'cuda'
+    print(cfg.MODEL.DEVICE)
     cfg.freeze()
     return cfg
 
@@ -32,6 +33,8 @@ def run_python(method):
 
   if input_file_in_memory is None :
     return jsonify({'message': 'invalid file'}), 400
+  
+  print(input_file_in_memory.shape)
   if input_file_in_memory.shape[2] == 4 :
     input_file_in_memory = input_file_in_memory[:,:,0:-1]
     

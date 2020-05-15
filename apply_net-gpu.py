@@ -27,8 +27,23 @@ from densepose.vis.densepose import (
 )
 from densepose.vis.extractor import CompoundExtractor, create_extractor
 
-LOGGER_NAME = "apply_net"
-logger = logging.getLogger(LOGGER_NAME)
+
+opts = []
+config_fpath='/workspace/detectron2_repo/configs/densepose_rcnn_R_50_FPN_s1x_legacy.yaml'
+model_fpath='/workspace/detectron2_repo/densepose_rcnn_R_50_FPN_s1x.pkl'
+
+def setup_config():
+    cfg = get_cfg()
+    add_densepose_config(cfg)
+    cfg.merge_from_file(config_fpath)
+    if opts:
+        cfg.merge_from_list(opts)
+    cfg.MODEL.WEIGHTS = model_fpath
+    cfg.MODEL.DEVICE = 'cuda'
+    cfg.freeze()
+    return cfg
+
+cfg = setup_config()
 
 class Action(object):
     pass
@@ -36,16 +51,7 @@ class Action(object):
 class InferenceAction(Action):
     @classmethod
     def execute(cls: type, args: argparse.Namespace):
-        logger.info(f"Loading config from {args.cfg}")
-        opts = []
-        cfg = cls.setup_config(args.cfg, args.model, args, opts)
-        logger.info(f"Loading model from {args.model}")
         predictor = DefaultPredictor(cfg)
-        logger.info(f"Loading data from {args.input}")
-        # file_list = cls._get_input_file_list(args.input)
-        # if len(file_list) == 0:
-        #    logger.warning(f"No input images for {args.input}")
-        #    return
         file_list = [args.input]
         context = cls.create_context(args)
         for file_name in file_list:
@@ -56,20 +62,6 @@ class InferenceAction(Action):
                 out_binary = cls.execute_on_outputs(context, {"file_name": file_name, "image": img}, outputs)
         cls.postexecute(context)
         return out_binary
-
-    @classmethod
-    def setup_config(
-        cls: type, config_fpath: str, model_fpath: str, args: argparse.Namespace, opts: List[str]
-    ):
-        cfg = get_cfg()
-        add_densepose_config(cfg)
-        cfg.merge_from_file(config_fpath)
-        if opts:
-            cfg.merge_from_list(opts)
-        cfg.MODEL.WEIGHTS = model_fpath
-        cfg.MODEL.DEVICE = 'cuda'
-        cfg.freeze()
-        return cfg
 
 class ShowAction(InferenceAction):
     """
@@ -86,18 +78,6 @@ class ShowAction(InferenceAction):
     }
 
     @classmethod
-    def setup_config(
-        cls: type, config_fpath: str, model_fpath: str, args: argparse.Namespace, opts: List[str]
-    ):
-        opts.append("MODEL.ROI_HEADS.SCORE_THRESH_TEST")
-        opts.append(str(args.min_score))
-        if args.nms_thresh is not None:
-            opts.append("MODEL.ROI_HEADS.NMS_THRESH_TEST")
-            opts.append(str(args.nms_thresh))
-        cfg = super(ShowAction, cls).setup_config(config_fpath, model_fpath, args, opts)
-        return cfg
-
-    @classmethod
     def execute_on_outputs(
         cls: type, context: Dict[str, Any], entry: Dict[str, Any], outputs: Instances
     ):
@@ -106,7 +86,6 @@ class ShowAction(InferenceAction):
         visualizer = context["visualizer"]
         extractor = context["extractor"]
         image_fpath = entry["file_name"]
-        logger.info(f"Processing {image_fpath}")
         image = cv2.cvtColor(entry["image"], cv2.COLOR_BGR2GRAY)
         image = np.tile(image[:, :, np.newaxis], [1, 1, 3])
         data = extractor(outputs)
@@ -117,7 +96,6 @@ class ShowAction(InferenceAction):
         # if len(out_dir) > 0 and not os.path.exists(out_dir):
         #    os.makedirs(out_dir)
         # cv2.imwrite(out_fname, image_vis)
-        logger.info(f"Output saved to {out_fname}")
         context["entry_idx"] += 1
         return cv2.imencode('.jpg', image_vis)[1]
     @classmethod
@@ -151,18 +129,13 @@ class ShowAction(InferenceAction):
 
 def main(file_in_memory):
     args = argparse.Namespace()
-    args.cfg='/workspace/detectron2_repo/configs/densepose_rcnn_R_50_FPN_s1x_legacy.yaml'
     args.func=ShowAction.execute
     args.input=file_in_memory
     args.min_score=0.8
-    args.model='/workspace/detectron2_repo/densepose_rcnn_R_50_FPN_s1x.pkl'
     args.nms_thresh=None
     args.output='outputres2.png'
     args.verbosity=None
     args.visualizations='dp_contour,bbox'
     verbosity = args.verbosity if hasattr(args, "verbosity") else None
-    global logger
-    logger = setup_logger(name=LOGGER_NAME)
-    logger.setLevel(verbosity_to_level(verbosity))
     out_binary_buffer = args.func(args)
     return out_binary_buffer
