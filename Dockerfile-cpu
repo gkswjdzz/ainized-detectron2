@@ -22,6 +22,7 @@ RUN pip install torchvision
 RUN wget https://dl.fbaipublicfiles.com/densepose/densepose_rcnn_R_50_FPN_s1x/143908701/model_final_dd99d2.pkl -O /workspace/detectron2_repo/densepose_rcnn_R_50_FPN_s1x.pkl
 RUN wget http://images.cocodataset.org/val2017/000000439715.jpg -O /workspace/uploads/input.jpg
 
+RUN pip install requests
 COPY . .
 RUN mv /workspace/demo.py /workspace/detectron2_repo/demo.py
 RUN mv /workspace/apply_net.py /workspace/detectron2_repo/apply_net.py
