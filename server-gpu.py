@@ -6,11 +6,46 @@ import numpy as np
 import cv2
 import io
 import requests
-
+from queue import Empty, Queue
+import threading
+import time 
+import json
 import subprocess 
 from apply_net import main as apply_net_main
 
+requests_queue = Queue()
+
 app = Flask(__name__)
+
+BATCH_SIZE=1
+CHECK_INTERVAL=0.1
+
+def is_json(myjson):
+  try:
+    json_object = json.loads(myjson)
+  except TypeError as e:
+    return False
+  return True
+
+def handle_requests_by_batch():
+  while True:
+    requests_batch = []
+    while not (
+      len(requests_batch) >= BATCH_SIZE # or
+      #(len(requests_batch) > 0 #and time.time() - requests_batch[0]['time'] > BATCH_TIMEOUT)
+    ):
+      try:
+        requests_batch.append(requests_queue.get(timeout=CHECK_INTERVAL))
+      except Empty:
+        continue
+    batch_outputs = []
+    for request in requests_batch:
+      batch_outputs.append(run(request['input'][0], request['input'][1]))
+
+    for request, output in zip(requests_batch, batch_outputs):
+      request['output'] = output
+
+threading.Thread(target=handle_requests_by_batch).start()
 
 def track_event(category, action, label=None, value=0):
   data = {
@@ -45,20 +80,7 @@ def setup_cfg(config_file, confidence_threshold = 0.5, is_gpu = False):
     cfg.freeze()
     return cfg
 
-@app.route('/health')
-def health():
-  return "ok"
-
-@app.route('/<method>', methods=['POST'])
-def run_python(method):
-  track_event(category='Detectron2_cpu', action=method)
-  filestr = request.files['file'].read()
-  npimg = np.fromstring(filestr, np.uint8)
-  input_file_in_memory = cv2.imdecode(npimg, cv2.IMREAD_UNCHANGED)
-
-  if input_file_in_memory is None :
-    return jsonify({'message': 'invalid file'}), 400
-  
+def run(input_file_in_memory, method):
   print(input_file_in_memory.shape)
   if input_file_in_memory.shape[2] == 4 :
     input_file_in_memory = input_file_in_memory[:,:,0:-1]
@@ -72,9 +94,9 @@ def run_python(method):
   elif method == 'densepose' :
     io_buf = None
     io_buf = io.BytesIO(apply_net_main(input_file_in_memory))
-    return send_file(io_buf, mimetype='image/jpeg')
+    return io_buf
   else :
-    return jsonify({'message': 'invalid parameter'}), 400
+    return {'message': 'invalid parameter'}
 
   cfg = setup_cfg(config_file=config_file, is_gpu=True)
   debug = False if method == 'predictions' else True
@@ -87,9 +109,43 @@ def run_python(method):
     is_success, buffer = cv2.imencode(".jpg", output_file_in_memory)
     io_buf = io.BytesIO(buffer)
     
-    return send_file(io_buf, mimetype='image/jpeg')
+    return io_buf
   else : 
-    return jsonify(obj), 200
+    return obj
+  
+@app.route('/health')
+def health():
+  return "ok"
+
+@app.route('/<method>', methods=['POST'])
+def run_python(method):
+  track_event(category='api_gpu', action=f'/${method}')
+  print(requests_queue.qsize())
+  if requests_queue.qsize() >= 1:
+    return 'Too Many Requests', 429
+  filestr = request.files['file'].read()
+  npimg = np.fromstring(filestr, np.uint8)
+  input_file_in_memory = cv2.imdecode(npimg, cv2.IMREAD_UNCHANGED)
+
+  if input_file_in_memory is None :
+    return jsonify({'message': 'invalid file'}), 400
+
+  req = { 
+    'input': [input_file_in_memory, method]
+  }
+
+  requests_queue.put(req)
+  
+  while 'output' not in req:
+    time.sleep(CHECK_INTERVAL)
+  
+  ret = req['output']
+  if type(ret) is dict:
+    return jsonify(ret), 200
+  if is_json(ret) :
+    return jsonify(ret), 400
+  else :
+    return send_file(ret, mimetype='image/jpeg'), 200
   
 if __name__ == "__main__":
-  app.run(debug=False, port=80, host='0.0.0.0', threaded=False)  
+  app.run(debug=False, port=80, host='0.0.0.0')  
