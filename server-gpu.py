@@ -124,6 +124,9 @@ def run_python(method):
   if requests_queue.qsize() >= 1:
     return 'Too Many Requests', 429
   filestr = request.files['file'].read()
+  preview_mode = request.form.get('preview')
+  preview_mode = True if preview_mode is not None and preview_mode == 'true' else False
+
   npimg = np.fromstring(filestr, np.uint8)
   input_file_in_memory = cv2.imdecode(npimg, cv2.IMREAD_UNCHANGED)
 
@@ -141,6 +144,10 @@ def run_python(method):
   
   ret = req['output']
   if type(ret) is dict:
+    if preview_mode:
+      dump = json.dumps(ret)
+      if len(dump) > 1000 :
+        return dump[0:1000], 200
     return jsonify(ret), 200
   if is_json(ret) :
     return jsonify(ret), 400
