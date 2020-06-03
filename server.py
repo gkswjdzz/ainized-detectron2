@@ -81,7 +81,6 @@ def setup_cfg(config_file, confidence_threshold = 0.5, is_gpu = False):
     return cfg
 
 def run(input_file_in_memory, method):
-  print(input_file_in_memory.shape)
   if input_file_in_memory.shape[2] == 4 :
     input_file_in_memory = input_file_in_memory[:,:,0:-1]
     
@@ -133,6 +132,12 @@ def run_python(method):
   if input_file_in_memory is None :
     return jsonify({'message': 'invalid file'}), 400
 
+  print(input_file_in_memory.shape)
+  height, width, _ = input_file_in_memory.shape
+  
+  if height * width >= 6250000 :
+    return jsonify({'message': 'too big size image'})
+
   req = { 
     'input': [input_file_in_memory, method]
   }
@@ -147,7 +152,7 @@ def run_python(method):
     if preview_mode:
       dump = json.dumps(ret)
       if len(dump) > 1000 :
-        return dump[0:1000], 200
+        return jsonify(dump[0:1000]), 200
     return jsonify(ret), 200
   if is_json(ret) :
     return jsonify(ret), 400
