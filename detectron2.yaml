@@ -25,6 +25,11 @@ paths:
                 file:
                   type: string
                   format: binary
+                preview:
+                  type: boolean
+                  example: true
+                  default: true
+                  description: please set preview to true when used in swagger ui
       responses:
         '200':
           description: Result Json.
