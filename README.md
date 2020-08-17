@@ -1,4 +1,4 @@
-[![Run on Ainize](https://ainize.ai/static/images/run_on_ainize_button.svg)](https://ainize.web.app/redirect?git_repo=github.com/gkswjdzz/ainized-detectron2)
+[![Run on Ainize](https://ainize.ai/static/images/run_on_ainize_button.svg)](https://ainize.web.app/redirect?git_repo=https://github.com/gkswjdzz/ainized-detectron2)
 # Ainized-Detectron2
 
 [Detectron2](https://github.com/facebookresearch/detectron2) is the object detection open source project based on the pytorch made in the Facebook AI Research (FAIR). With modular design, Detectron2 is more flexible, extensible than the existing Detectron. Detectron2 provides models of object detection such as panoptic segmentation, DensePose, Cascade RCNN, and more based on a variety of backbones.
