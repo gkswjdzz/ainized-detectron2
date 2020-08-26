@@ -53,7 +53,7 @@ class VisualizationDemo(object):
         """
         vis_output = None
         obj = None
-        predictions = self.predictor(image)
+        predictions = self.predictor(image.astype(np.uint8))
         # Convert image from OpenCV BGR format to Matplotlib RGB format.
         image = image[:, :, ::-1]
         visualizer = Visualizer(image, self.metadata, instance_mode=self.instance_mode)
