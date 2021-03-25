@@ -1,7 +1,7 @@
 numpy
 opencv-python==3.4.8.29
 cython
-pyyaml==5.1
+pyyaml==5.4
 Pillow==8.1.1
 scipy
 git+https://github.com/facebookresearch/fvcore
