@@ -62,31 +62,31 @@ paths:
                 format: binary
         '400':
           description: Bad request
-  /densepose:
-    post:
-      tags: 
-        - DensePose
-      summary: Run DensePose
-      description: "Paper Link: [https://paperswithcode.com/paper/densepose-dense-human-pose-estimation-in-the](https://paperswithcode.com/paper/densepose-dense-human-pose-estimation-in-the)\n\n [Sample Photo Download Link](http://farm8.staticflickr.com/7281/8741619051_55ff878e1e_z.jpg)"
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                file:
-                  type: string
-                  format: binary
-      responses:
-        '200':
-          description: Result Image.
-          content:
-            image/*:
-              schema:
-                type: string
-                format: binary
-        '400':
-          description: Bad request
+  # /densepose:
+  #   post:
+  #     tags: 
+  #       - DensePose
+  #     summary: Run DensePose
+  #     description: "Paper Link: [https://paperswithcode.com/paper/densepose-dense-human-pose-estimation-in-the](https://paperswithcode.com/paper/densepose-dense-human-pose-estimation-in-the)\n\n [Sample Photo Download Link](http://farm8.staticflickr.com/7281/8741619051_55ff878e1e_z.jpg)"
+  #     requestBody:
+  #       content:
+  #         multipart/form-data:
+  #           schema:
+  #             type: object
+  #             properties:
+  #               file:
+  #                 type: string
+  #                 format: binary
+  #     responses:
+  #       '200':
+  #         description: Result Image.
+  #         content:
+  #           image/*:
+  #             schema:
+  #               type: string
+  #               format: binary
+  #       '400':
+  #         description: Bad request
   /panopticsegmentation:
     post:
       tags: 
