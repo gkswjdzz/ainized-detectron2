@@ -1,17 +1,15 @@
-import multiprocessing as mp
+import streamlit as st
 import numpy as np
-import cv2
-import torch
 from PIL import Image
 from detectron2 import model_zoo
 from detectron2.config import get_cfg
 from detectron2.utils.visualizer import Visualizer
 from detectron2.engine import DefaultPredictor
 from detectron2.data import MetadataCatalog
-from flask import Flask, request, Response, render_template, jsonify, send_file
-import io
 
-app = Flask(__name__, static_url_path='/static')
+# https://en.wikipedia.org/wiki/YUV#SDTV_with_BT.601
+_M_RGB2YUV = [[0.299, 0.587, 0.114], [-0.14713, -0.28886, 0.436], [0.615, -0.51499, -0.10001]]
+_M_YUV2RGB = [[1.0, 0.0, 1.13983], [1.0, -0.39465, -0.58060], [1.0, 2.03211, 0.0]]
 
 def convert_PIL_to_numpy(image, format):
     if format is not None:
@@ -39,9 +37,9 @@ def read_image(file, format=None):
     image = Image.open(file)
     return convert_PIL_to_numpy(image, format)
 
-@app.route('/health')
-def health():
-    return "ok"
+# @app.route('/health')
+# def health():
+    # return "ok"
 
 # @app.route('/')
 # def main():
@@ -67,51 +65,49 @@ keypoint_cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.7
 keypoint_cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-Keypoints/keypoint_rcnn_R_50_FPN_3x.yaml")
 keypointPredictor = DefaultPredictor(keypoint_cfg)
 
-@app.route('/<path>', methods=['POST'])
-def predict(path):
-    try:
-        input_file = request.files['file']
-
-        if input_file.content_type not in ['image/jpeg', 'image/jpg', 'image/png']:
-            return jsonify({'message': 'Only support jpeg, jpg or png'}), 400
-
-        print(input_file.content_type)
-        if input_file.content_type == 'image/png': 
-            input_file = Image.open(input_file).convert('RGB')
-            np = convert_PIL_to_numpy(input_file, None)
-        else:
-            np = read_image(input_file)
-            
+def predict(path, np):
         if path == 'keypoint':
             cfg = keypoint_cfg
-            predictions = keypointPredictor(np)
+            predictions = keypointPredictor(np)["instances"]
+            visualizer = Visualizer(np[:, :, ::-1], MetadataCatalog.get(cfg.DATASETS.TRAIN[0]), scale=1.0)
+            instances = predictions.to('cpu')
+            vis_output = visualizer.draw_instance_predictions(predictions=instances)
+       
         elif path == 'instancesegmentation':
             cfg = instance_cfg
-            predictions = instancePredictor(np)
+            predictions = instancePredictor(np)["instances"]
+            visualizer = Visualizer(np[:, :, ::-1], MetadataCatalog.get(cfg.DATASETS.TRAIN[0]), scale=1.0)
+            instances = predictions.to('cpu')
+            vis_output = visualizer.draw_instance_predictions(predictions=instances)
+       
         elif path == 'panopticsegmentation':
             cfg = panoptic_cfg
-            predictions = panopticPredictor(np)
+            panoptic_seg, segments_info = panopticPredictor(np)["panoptic_seg"]
+            visualizer = Visualizer(np[:, :, ::-1], MetadataCatalog.get(cfg.DATASETS.TRAIN[0]), scale=1.0)
+            vis_output = visualizer.draw_panoptic_seg_predictions(panoptic_seg.to("cpu"), segments_info)
         else:
-            return jsonify({'message': 'path is not vaild'}), 400
-        
-        visualizer = Visualizer(np[:, :, ::-1], MetadataCatalog.get(cfg.DATASETS.TRAIN[0]), scale=0.6)
+            return 'nothing'
 
-        instances = predictions["instances"].to('cpu')
-        vis_output = visualizer.draw_instance_predictions(predictions=instances)
+        result_image = vis_output.get_image()[:, :, ::-1]
+        return result_image
 
-        cv2.imwrite('abc.jpg',vis_output.get_image()[:, :, ::-1])
-        result_image = Image.fromarray(vis_output.get_image()[:, :, ::-1])
-        result = io.BytesIO()
-        
-        result_image.save(result, 'JPEG', quality=95)
-        result.seek(0)
+FAVICON_URL = "https://cloud.kt.com/favicon.ico"
 
-        return send_file(result, mimetype='image/jpeg')
+st.set_page_config(
+    page_title="사진을 넣어 물체를 인식해보세요", page_icon=FAVICON_URL,
+)
 
-    except Exception as e:
-        print(e)
-        return jsonify({'message': 'Server error'}), 500
+st.title("사진을 넣어 물체를 인식해보세요!")
 
-if __name__ == "__main__":
-    mp.set_start_method("spawn", force=True)
-    app.run(host="0.0.0.0", port=80)
+st.subheader("사진을 넣고 다양한 모델을 이용하여 사진의 물체들을 인식해보세요.")
+
+model = st.selectbox('모델 선택', list(['instancesegmentation', 'panopticsegmentation', 'keypoint']))
+
+input_file = st.file_uploader("파일을 넣어주세요.")
+if input_file is not None:
+    input_file = read_image(input_file)
+    st.write('입력한 사진')
+    st.image(input_file)
+    st.write('결과물')
+    input_file = predict(model, input_file)
+    st.image(input_file)

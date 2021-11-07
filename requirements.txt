@@ -1,10 +1,5 @@
-numpy
-opencv-python==3.4.8.29
-cython
-pyyaml==5.1
-Pillow==8.1.1
-scipy
-git+https://github.com/facebookresearch/fvcore
-git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI
-dataclasses
-flask
+opencv-python-headless==4.5.4.58
+torchvision==0.9.1
+torchaudio==0.8.1
+flask==2.0.2
+streamlit==1.1.0
