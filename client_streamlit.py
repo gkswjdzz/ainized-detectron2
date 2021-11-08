@@ -34,7 +34,7 @@ def convert_PIL_to_numpy(image, format):
     return image
 
 def read_image(file, format=None):
-    image = Image.open(file)
+    image = Image.open(file).convert('RGB')
     return convert_PIL_to_numpy(image, format)
 
 # @app.route('/health')
