@@ -91,12 +91,6 @@ def predict(path, np):
         result_image = vis_output.get_image()[:, :, ::-1]
         return result_image
 
-FAVICON_URL = "https://cloud.kt.com/favicon.ico"
-
-st.set_page_config(
-    page_title="사진을 넣어 물체를 인식해보세요", page_icon=FAVICON_URL,
-)
-
 st.title("사진을 넣어 물체를 인식해보세요!")
 
 st.subheader("사진을 넣고 다양한 모델을 이용하여 사진의 물체들을 인식해보세요.")
