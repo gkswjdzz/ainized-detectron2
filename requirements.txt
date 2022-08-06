@@ -2,4 +2,4 @@ opencv-python-headless==4.5.4.58
 torchvision==0.9.1
 torchaudio==0.8.1
 flask==2.0.2
-streamlit==1.1.0
+streamlit==1.11.1
